@@ -74,18 +74,34 @@
 ---
 
 # 🔧 Установка
+# 🔧 Установка (весь код в одной ячейке)
 
-
+```bash
+# 1. Клонируйте репозиторий
 git clone https://github.com/дкарабарин/Команда-ИИ-агентов-3.git
 cd Команда-ИИ-агентов-3
-# Установите Ollama с официального сайта https://ollama.com
-# Затем скачайте модель (рекомендуется qwen3:4b для русского языка)
-ollama pull qwen3:4b
 
-Альтернативные модели:
-ollama pull llama3.2:3b  # английская, 3B параметров
-ollama pull mistral:7b   # мощная, но требует больше RAM
-ollama pull gemma2:2b    # легкая, быстрая
+# 2. Установите Ollama (скачайте с https://ollama.com) и модель
+ollama pull qwen3:4b  # для русского языка
+# Альтернативы: ollama pull llama3.2:3b, ollama pull mistral:7b, ollama pull gemma2:2b
+
+# 3. Создайте виртуальное окружение
+# Windows:
+python -m venv .venv
+.venv\Scripts\activate
+# Linux/Mac:
+# python3 -m venv .venv
+# source .venv/bin/activate
+
+# 4. Установите зависимости
+pip install -r requirements.txt
+
+# 5. Подготовьте папку с учебными материалами
+mkdir books
+# Поместите PDF файлы в папку books/
+
+# 6. Запустите бота
+python bot-local-ollama.py
 
 
 📖 Использование
