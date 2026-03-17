@@ -37,8 +37,8 @@
 ## 🔧 Установка
 
 1. Клонируйте репозиторий и перейдите в него
-   - `git clone https://github.com/дкарабарин/Команда-ИИ-агентов-3.git`
-   - `cd Команда-ИИ-агентов-3`
+   - `git clone https://github.com/AI-agent-team-3/dkarabarin
+   -  cd Команда-ИИ-агентов-3`
 
 2. Установите Ollama и модель
    - Установите Ollama с официального сайта: https://ollama.com
