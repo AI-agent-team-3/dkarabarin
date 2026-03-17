@@ -104,9 +104,7 @@
 
 ### Пошаговая установка
 
-**1. Клонируйте репозиторий**
-
-```bash
+**1.Клонируйте репозиторий**
 git clone https://github.com/yourusername/rag-thermodynamics-bot.git
 cd rag-thermodynamics-bot
 
