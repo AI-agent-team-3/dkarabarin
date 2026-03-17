@@ -77,9 +77,8 @@ text
 ```bash
 git clone https://github.com/дкарабарин/Команда-ИИ-агентов-3.git
 cd Команда-ИИ-агентов-3
-
-### 1. Клонируйте репозиторий
-### 2. Установите Ollama и скачайте модель
+2. Установите Ollama и скачайте модель
+bash
 # Установите Ollama с официального сайта https://ollama.com
 # Затем скачайте модель (рекомендуется qwen3:4b для русского языка)
 ollama pull qwen3:4b
@@ -88,5 +87,28 @@ ollama pull qwen3:4b
 # ollama pull llama3.2:3b  # английская, 3B параметров
 # ollama pull mistral:7b    # мощная, но требует больше RAM
 # ollama pull gemma2:2b     # легкая, быстрая
+3. Создайте виртуальное окружение
+bash
+# Windows
+python -m venv .venv
+.venv\Scripts\activate
+
+# Linux/Mac
+python3 -m venv .venv
+source .venv/bin/activate
+4. Установите зависимости
+bash
+pip install -r requirements.txt
+5. Подготовьте учебные материалы
+bash
+# Создайте папку для книг
+mkdir books
+
+# Поместите PDF-файлы в папку books/
+# Например: books/термодинамика.pdf
+6. Запустите бота
+bash
+python bot-local-ollama.py
+
 
 
