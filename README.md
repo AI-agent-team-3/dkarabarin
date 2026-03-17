@@ -107,7 +107,10 @@ mkdir books
 # Поместите PDF-файлы в папку books/
 # Например: books/термодинамика.pdf
 6. Запустите бота
-bash
+
+---
+
+
 python bot-local-ollama.py
 
 
