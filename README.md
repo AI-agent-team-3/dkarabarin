@@ -105,13 +105,13 @@ Ollama (для локальной LLM)
 
 4-8 GB свободной RAM (зависит от модели)
 
-Пошаговая установка
-1. Клонируйте репозиторий
+### Пошаговая установка
+### 1. Клонируйте репозиторий
 
 bash
 git clone https://github.com/yourusername/rag-thermodynamics-bot.git
 cd rag-thermodynamics-bot
-2. Установите Ollama и скачайте модель
+### 2. Установите Ollama и скачайте модель
 
 bash
 # Установите Ollama с официального сайта https://ollama.com
