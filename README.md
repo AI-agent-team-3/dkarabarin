@@ -110,6 +110,7 @@
 ## Архитектура проекта
 
 - `bot-local-ollama.py` — основной файл пользовательского интерфейса
+- `bot-local.py` — основной файл телеграмбота
 - `rag.py` — система RAG (Retrieval-Augmented Generation)
 - `requirements.txt` — зависимости
 - `books/` — PDF-файлы материалов
