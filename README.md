@@ -1,6 +1,6 @@
 # 🔥 Thermodynamics RAG Assistant
 
-Локальный ИИ-ассистент для изучения технической термодинамики с поддержкой RAG (Retrieval-Augmented Generation), веб-поиска через Tavily и полной наблюдаемостью через Langfuse.
+Локальный ИИ-ассистент для изучения технической термодинамики с поддержкой RAG (Retrieval-Augmented Generation), веб-поиск через Tavily и полной наблюдаемостью через Langfuse.
 
 ---
 
@@ -34,27 +34,23 @@ brew install python@3.11
 Windows:
 
 Скачайте с ollama.ai/download/windows
-
 Установите и запустите
-
 Linux/Mac:
+
+bash
 
 bash
 curl -fsSL https://ollama.ai/install.sh | sh
 ollama pull qwen3:4b
 3. Получение API ключей
-Tavily API (для веб-поиска):
-
+Tavily API (веб-поиск):
 Зарегистрируйтесь на app.tavily.com
-
 Получите бесплатный API ключ (1000 запросов/месяц)
-
 Langfuse (опционально, для наблюдаемости):
-
 Запустите локально через Docker или используйте cloud.langfuse.com
-
 4. Клонирование и установка
 bash
+
 git clone https://github.com/yourusername/thermodynamics-rag.git
 cd thermodynamics-rag
 python -m venv venv
@@ -63,22 +59,28 @@ venv\Scripts\activate.bat  # Windows
 pip install -r requirements.txt
 5. Настройка окружения
 bash
+
 cp .env.example .env
 # Отредактируйте .env, добавьте ключи
 6. Подготовка базы знаний
 bash
+
 mkdir books
 # Добавьте PDF-файлы по термодинамике в папку books/
 7. Запуск Langfuse (опционально)
 bash
+
 docker compose up -d
 8. Запуск ассистента
 bash
+
 python local_rag.py
 📖 Использование
 Запросы вводите в консоль — ассистент ищет ответы по PDF, интернету и модели.
 
-text
+интерфейс (пример вывода)
+plaintext
+
 ======================================================================
 🔥  ЛОКАЛЬНЫЙ КОНСУЛЬТАНТ ПО ТЕРМОДИНАМИКЕ  🔥
 ======================================================================
@@ -120,13 +122,13 @@ text
 ======================================================================
 ⏱️  Время: 2.3 сек
 💡 Возможно, вас заинтересует:
+- Расскажи подробнее о втором законе термодинамики.
+- Как энтропия связана с температурой?
 
-Расскажи подробнее о втором законе термодинамики.
+---
 
-Как энтропия связана с температурой?
-
-📁 Структура проекта
-text
+## Структура проекта
+```plaintext
 thermodynamics-rag/
 ├── books/                      # Папка с PDF-файлами
 ├── local_rag.py                # Основной консольный ассистент
@@ -135,9 +137,11 @@ thermodynamics-rag/
 ├── .env.example                # Пример переменных окружения
 ├── docker-compose.yml          # Для Langfuse
 └── README.md                   # Документация
-🔧 Конфигурация
+Конфигурация
 .env файл
-env
+
+plaintext
+
 # Ollama (локальная модель)
 OLLAMA_BASE=http://localhost:11434/v1
 OLLAMA_MODEL=qwen3:4b
@@ -154,19 +158,21 @@ LANGFUSE_HOST=http://localhost:3000
 EMBEDDING_MODEL=e5-base  # e5-base, bge-m3, minilm, rubert
 Параметры RAG в rag.py
 python
+
 CHUNK_SIZE = 800          # Размер чанка (символы)
 CHUNK_OVERLAP = 150       # Перекрытие между чанками
 K_RETRIEVAL = 5           # Количество документов для поиска
 EMBEDDING_MODEL = "BAAI/bge-m3"  # Модель эмбеддингов
-📊 Модели эмбеддингов
-Модель	Размер	RAM	Качество	Рекомендация
+Модели эмбеддингов
+Модель	Размер	RAM	Качество	Рекомендуется
 intfloat/multilingual-e5-base	278M	1.5GB	Отличное	⭐ Лучший выбор
 BAAI/bge-m3	568M	2.5GB	Максимальное	Для мощных ПК
 sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2	118M	500MB	Хорошее	Для слабых ПК
 ai-forever/sbert_large_mt_nlu_ru	560M	2.2GB	Отличное	Для русского языка
-🐛 Устранение проблем
-Ollama не доступен
+Устранение проблем
+Ollama не доступен:
 bash
+
 # Проверьте статус
 ollama list
 
@@ -175,8 +181,9 @@ ollama serve
 
 # Загрузите модель
 ollama pull qwen3:4b
-Langfuse не подключается
+Langfuse не подключается:
 bash
+
 # Проверьте Docker
 docker ps
 
@@ -185,36 +192,30 @@ docker compose up -d
 
 # Проверьте доступность
 curl http://localhost:3000/api/health
-Нет PDF файлов
+Нет PDF файлов:
 bash
+
 # Создайте папку
 mkdir books
 
 # Добавьте PDF-файлы
 # Поддерживаются любые PDF с русским или английским текстом
-Проблемы с памятью
-Уменьшите параметры в rag.py:
-
+Проблемы с памятью:
 python
+
+# Уменьшите параметры в rag.py:
 CHUNK_SIZE = 500      # вместо 800
 CHUNK_OVERLAP = 100   # вместо 150
 K_RETRIEVAL = 3       # вместо 5
-📊 Langfuse Dashboard
+Langfuse Dashboard
 После запуска Langfuse, откройте http://localhost:3000 для просмотра:
 
 Traces — все запросы с временем выполнения
-
 Sessions — группировка запросов по сессиям
-
 Scores — оценки качества ответов
-
 Metrics — статистика использования
-
-🛡️ Безопасность
+Безопасность
 Все данные хранятся локально
-
 PDF-файлы не отправляются в облако
-
 Веб-поиск только по вашему запросу
-
 Langfuse можно запустить локально
