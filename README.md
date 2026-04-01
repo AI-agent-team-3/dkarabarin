@@ -52,3 +52,8 @@ python -m venv venv
 # Linux/Mac: venv/bin/activate
 # Windows: venv\Scripts\activate.bat
 pip install -r requirements.txt
+
+### 5. Настройка окружения
+```plaintext
+cp .env.example .env
+# Отредактируйте файл .env, добавьте ваши ключи
