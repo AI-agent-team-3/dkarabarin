@@ -1,4 +1,40 @@
+```markdown
 # 🔥 Thermodynamics RAG Assistant
+
+## Основные возможности
+- RAG на PDF-учебниках
+- Локальная LLM через Ollama
+- Веб-поиск через Tavily
+- Трассировка через Langfuse
+- Гибридный поиск: PDF → интернет → LLM
+- Консольный интерфейс
+
+## Быстрый старт
+1. Установите Python 3.11  
+2. Установите Ollama, скачав или через команду: `curl -fsSL https://ollama.ai/install.sh | sh`  
+3. Загрузите модель: `ollama pull qwen3:4b`  
+4. Получите API ключи Tavily и Langfuse  
+5. Клонируйте проект:  
+```bash
+git clone https://github.com/yourusername/thermodynamics-rag.git
+cd thermodynamics-rag
+python -m venv venv
+```
+6. Активируйте виртуальное окружение и установите зависимости:  
+```bash
+source venv/bin/activate   # Linux/Mac
+venv\Scripts\activate.bat # Windows
+pip install -r requirements.txt
+```
+7. Настройте `.env`, добавьте API-ключи  
+8. Добавьте PDF-файлы в папку `books/`  
+9. При необходимости запустите Langfuse: `docker compose up -d`  
+10. Запустите ассистента: `python local_rag.py`
+
+---
+
+**Следующий вопрос:**
+```# 🔥 Thermodynamics RAG Assistant
 
 # Локальный ИИ-ассистент для изучения технической термодинамики с поддержкой RAG (Retrieval-Augmented Generation).
 
