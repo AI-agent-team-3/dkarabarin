@@ -41,19 +41,29 @@
 - **Tavily API (веб-поиск):**  
   - Зарегистрируйтесь на [app.tavily.com](https://app.tavily.com)  
   - Получите бесплатный API-ключ (1000 запросов/месяц).
+
 - **Langfuse (опционально, для наблюдаемости):**  
   - Запустите локально через Docker или используйте [cloud.langfuse.com](https://cloud.langfuse.com).
+
+---
+
 ### 4. Клонирование и установка
 ```bash
- git clone https://github.com/yourusername/thermodynamics-rag.git
- cd thermodynamics-rag
- python -m venv venv
- # Активируйте виртуальное окружение:
- # Linux/Mac: venv/bin/activate
- # Windows: venv\Scripts\activate.bat
- pip install -r requirements.txt.
+git clone https://github.com/yourusername/thermodynamics-rag.git
+cd thermodynamics-rag
+python -m venv venv
+# Активируйте виртуальное окружение:
+# Linux/Mac: venv/bin/activate
+# Windows: venv\Scripts\activate.bat
+pip install -r requirements.txt
 
 ### 5. Настройка окружения
 ```plaintext
 cp .env.example .env
 # Отредактируйте файл .env, добавьте ваши ключи
+
+
+### 6. Подготовка базы знаний
+```bash
+mkdir books
+# Добавьте ваши PDF-файлы по термодинамике в папку books/
