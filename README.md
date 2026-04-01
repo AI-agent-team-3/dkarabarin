@@ -19,32 +19,13 @@
 
 ### 1. Установка Python 3.11
 
-**Windows:**
-- Скачайте Python 3.11 с [python.org](https://www.python.org/downloads/release/python-3110/)
-- При установке поставьте галочку **"Add Python to PATH"**
-
-**Linux / Mac:**
-```bash
-# Ubuntu/Debian
-sudo apt update && sudo apt install python3.11 python3.11-venv
-
-# Mac
-brew install python@3.11
-2. Установка Ollama
-Windows:
-
-Скачайте с ollama.ai/download/windows и установите
-Запустите программу
-Linux / Mac:
-
-bash
-
-bash -c "$(curl -fsSL https://ollama.ai/install.sh)"
-# Загрузите модель
+### 2. Установка Ollama
+#### Загрузите модель
 ollama pull qwen3:4b
-3. Получение API ключей
-Tavily API (веб-поиск):
-Зарегистрируйтесь на app.tavily.com
+
+### 3. Получение API ключей
+#### Tavily API (веб-поиск):
+#### Зарегистрируйтесь на app.tavily.com
 Получите бесплатный API ключ (1000 запросов/мес)
 Langfuse (опционально, для наблюдаемости):
 Запустите локально через Docker или используйте cloud.langfuse.com
