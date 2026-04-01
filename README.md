@@ -1,4 +1,3 @@
-```markdown
 # 🔥 Thermodynamics RAG Assistant
 
 ## Основные возможности
