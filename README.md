@@ -58,7 +58,6 @@ python -m venv venv
 pip install -r requirements.txt
 
 ### 5. Настройка окружения
-```plaintext
 cp .env.example .env
 # Отредактируйте файл .env, добавьте ваши ключи
 
