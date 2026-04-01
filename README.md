@@ -30,7 +30,6 @@ pip install -r requirements.txt
 9. При необходимости запустите Langfuse: `docker compose up -d`  
 10. Запустите ассистента: `python local_rag.py`
 
-```markdown
 # 📖 Использование
 Запросы вводите в консоль — ассистент ищет ответы по PDF, интернету и модели.
 
