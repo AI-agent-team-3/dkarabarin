@@ -23,7 +23,7 @@
 - Скачайте Python 3.11 с [python.org](https://www.python.org/downloads/release/python-3110/)
 - При установке поставьте галочку **"Add Python to PATH"**
 
-**Linux/Mac:**
+**Linux / Mac:**
 ```bash
 # Ubuntu/Debian
 sudo apt update && sudo apt install python3.11 python3.11-venv
@@ -33,19 +33,19 @@ brew install python@3.11
 2. Установка Ollama
 Windows:
 
-Скачайте с ollama.ai/download/windows
-Установите и запустите
-Linux/Mac:
+Скачайте с ollama.ai/download/windows и установите
+Запустите программу
+Linux / Mac:
 
 bash
 
-bash
-curl -fsSL https://ollama.ai/install.sh | sh
+bash -c "$(curl -fsSL https://ollama.ai/install.sh)"
+# Загрузите модель
 ollama pull qwen3:4b
 3. Получение API ключей
 Tavily API (веб-поиск):
 Зарегистрируйтесь на app.tavily.com
-Получите бесплатный API ключ (1000 запросов/месяц)
+Получите бесплатный API ключ (1000 запросов/мес)
 Langfuse (опционально, для наблюдаемости):
 Запустите локально через Docker или используйте cloud.langfuse.com
 4. Клонирование и установка
@@ -54,19 +54,24 @@ bash
 git clone https://github.com/yourusername/thermodynamics-rag.git
 cd thermodynamics-rag
 python -m venv venv
-source venv/bin/activate  # Linux/Mac
-venv\Scripts\activate.bat  # Windows
+
+# Активация виртуальной среды:
+# Linux / Mac
+source venv/bin/activate
+# Windows
+venv\Scripts\activate.bat
+
 pip install -r requirements.txt
 5. Настройка окружения
 bash
 
 cp .env.example .env
-# Отредактируйте .env, добавьте ключи
+# Отредактируйте .env и вставьте ваши ключи API
 6. Подготовка базы знаний
 bash
 
 mkdir books
-# Добавьте PDF-файлы по термодинамике в папку books/
+# Поместите PDF-файлы по термодинамике в папку `books/`
 7. Запуск Langfuse (опционально)
 bash
 
@@ -78,8 +83,8 @@ python local_rag.py
 📖 Использование
 Запросы вводите в консоль — ассистент ищет ответы по PDF, интернету и модели.
 
-интерфейс (пример вывода)
-plaintext
+Пример интерфейса (вывод):
+
 
 ======================================================================
 🔥  ЛОКАЛЬНЫЙ КОНСУЛЬТАНТ ПО ТЕРМОДИНАМИКЕ  🔥
@@ -124,29 +129,25 @@ plaintext
 💡 Возможно, вас заинтересует:
 - Расскажи подробнее о втором законе термодинамики.
 - Как энтропия связана с температурой?
+Структура проекта
+plaintext
 
----
-
-## Структура проекта
-```plaintext
 thermodynamics-rag/
 ├── books/                      # Папка с PDF-файлами
-├── local_rag.py                # Основной консольный ассистент
-├── rag.py                      # RAG модуль (эмбеддинги, поиск)
+├── local_rag.py                # Основной скрипт ассистента
+├── rag.py                      # Модуль RAG (поиск, эмбеддинги)
 ├── requirements.txt            # Зависимости
-├── .env.example                # Пример переменных окружения
-├── docker-compose.yml          # Для Langfuse
+├── .env.example                # Шаблон переменных окружения
+├── docker-compose.yml          # Для запуска Langfuse
 └── README.md                   # Документация
-Конфигурация
-.env файл
-
+Конфигурация окружения (.env)
 plaintext
 
 # Ollama (локальная модель)
 OLLAMA_BASE=http://localhost:11434/v1
 OLLAMA_MODEL=qwen3:4b
 
-# Tavily API (веб-поиск)
+# Tavily API
 TAVILY_API_KEY=tvly-...
 
 # Langfuse (опционально)
@@ -155,67 +156,24 @@ LANGFUSE_SECRET_KEY=sk-...
 LANGFUSE_HOST=http://localhost:3000
 
 # Модель эмбеддингов
-EMBEDDING_MODEL=e5-base  # e5-base, bge-m3, minilm, rubert
-Параметры RAG в rag.py
-python
-
-CHUNK_SIZE = 800          # Размер чанка (символы)
-CHUNK_OVERLAP = 150       # Перекрытие между чанками
-K_RETRIEVAL = 5           # Количество документов для поиска
-EMBEDDING_MODEL = "BAAI/bge-m3"  # Модель эмбеддингов
-Модели эмбеддингов
-Модель	Размер	RAM	Качество	Рекомендуется
-intfloat/multilingual-e5-base	278M	1.5GB	Отличное	⭐ Лучший выбор
-BAAI/bge-m3	568M	2.5GB	Максимальное	Для мощных ПК
-sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2	118M	500MB	Хорошее	Для слабых ПК
-ai-forever/sbert_large_mt_nlu_ru	560M	2.2GB	Отличное	Для русского языка
-Устранение проблем
-Ollama не доступен:
+EMBEDDING_MODEL=e5-base  # или bge-m3, minilm, rubert
+Советы по решению проблем
+Ollama не запускается:
 bash
 
-# Проверьте статус
-ollama list
-
-# Запустите сервер
-ollama serve
-
-# Загрузите модель
-ollama pull qwen3:4b
+ollama listollama serveollama pull qwen3:4b
 Langfuse не подключается:
 bash
 
-# Проверьте Docker
-docker ps
-
-# Запустите Langfuse
-docker compose up -d
-
-# Проверьте доступность
-curl http://localhost:3000/api/health
-Нет PDF файлов:
+docker psdocker compose up -dcurl http://localhost:3000/api/health
+Нет PDF-файлов:
 bash
 
-# Создайте папку
-mkdir books
-
-# Добавьте PDF-файлы
-# Поддерживаются любые PDF с русским или английским текстом
-Проблемы с памятью:
-python
-
-# Уменьшите параметры в rag.py:
-CHUNK_SIZE = 500      # вместо 800
-CHUNK_OVERLAP = 100   # вместо 150
-K_RETRIEVAL = 3       # вместо 5
-Langfuse Dashboard
-После запуска Langfuse, откройте http://localhost:3000 для просмотра:
-
-Traces — все запросы с временем выполнения
-Sessions — группировка запросов по сессиям
-Scores — оценки качества ответов
-Metrics — статистика использования
-Безопасность
+mkdir books# и добавьте свои PDF
+Память проблем:
+Уменьшите параметры CHUNK_SIZE, CHUNK_OVERLAP, K_RETRIEVAL в rag.py.
+Безопасность и конфиденциальность
 Все данные хранятся локально
-PDF-файлы не отправляются в облако
-Веб-поиск только по вашему запросу
-Langfuse можно запустить локально
+PDF-файлы не уходят в облако
+Веб-поиск происходит только по вашему запросу
+Langfuse можно запускать полностью локально
