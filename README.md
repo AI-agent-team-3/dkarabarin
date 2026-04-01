@@ -47,9 +47,9 @@ ollama pull qwen3:4b
 git clone https://github.com/yourusername/thermodynamics-rag.git
 cd thermodynamics-rag
 python -m venv venv
-# Linux/Mac:
+## Linux/Mac:
 source venv/bin/activate
-# Windows:
+## Windows:
 venv\Scripts\activate.bat
 pip install -r requirements.txt
 
@@ -61,7 +61,7 @@ cp .env.example .env
 
 6. Подготовка базы знаний
 mkdir books
-# добавьте PDF-файлы по термодинамике в папку books/
+### добавьте PDF-файлы по термодинамике в папку books/
 
 
 7. Запуск Langfuse (опционально)
@@ -72,9 +72,11 @@ docker compose up -d
 python local_rag.py
 
 
-
 📖 Использование
 Запросы вводите в консоль — ассистент ищет ответы по PDF, интернету и модели.
+
+
+
 
 text
 ======================================================================
