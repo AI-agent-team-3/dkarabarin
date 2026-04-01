@@ -130,11 +130,13 @@ EMBEDDING_MODEL=e5-base  # e5-base, bge-m3, minilm, rubert
 ### K_RETRIEVAL = 5           # Количество документов для поиска
 ### EMBEDDING_MODEL = "BAAI/bge-m3"  # Модель эмбеддингов
 # 📊 Модели эмбеддингов
-Модель	Размер	RAM	Качество	Рекомендация
-intfloat/multilingual-e5-base	278M	1.5GB	Отличное	Лучший выбор
-BAAI/bge-m3	568M	2.5GB	Максимальное	Для мощных ПК
-sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2	118M	500MB	Хорошее	Для слабых ПК
-ai-forever/sbert_large_mt_nlu_ru	560M	2.2GB	Отличное	Для русского языка
+| Модель | Размер | RAM | Качество | Рекомендация |
+| --- | --- | --- | --- | --- |
+| intfloat/multilingual-e5-base | 278M | 1.5GB | Отличное | Лучший выбор |
+| BAAI/bge-m3 | 568M | 2.5GB | Максимальное | Для мощных ПК |
+| sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2 | 118M | 500MB | Хорошее | Для слабых ПК |
+| ai-forever/sbert_large_mt_nlu_ru | 560M | 2.2GB | Отличное | Для русского языка |
+
 🐛 Устранение проблем
 Ollama не доступен
 bash
