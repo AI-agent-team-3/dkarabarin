@@ -53,6 +53,8 @@ python -m venv venv
 # Windows: venv\Scripts\activate.bat
 pip install -r requirements.txt
 
+
+```markdown
 ### 5. Настройка окружения
 ```plaintext
 cp .env.example .env
