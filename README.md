@@ -96,21 +96,18 @@ python local_rag.py
 ======================================================================
 ### ⏱️  Время: 2.3 сек
 # 📁 Структура проекта
-text
-thermodynamics-rag/
-├── books/                      # Папка с PDF-файлами
-├── local_rag.py                # Основной консольный ассистент
-├── rag.py                      # RAG модуль (эмбеддинги, поиск)
-├── requirements.txt            # Зависимости
-├── .env.example                # Пример переменных окружения
-├── docker-compose.yml          # Для Langfuse
-└── README.md                   # Документация
-🔧 Конфигурация
-.env файл
 
-    После основного ответа, предложи два варианта следующего вопроса от лица пользователя.
-    Пример: не "Хотите узнать больше о ...?", а "Расскажи подробнее о ...".
-    Формат должен быть строго следующим (включая фигурные скобки, без дополнительных пояснений):
+### thermodynamics-rag/
+### ├── books/                      # Папка с PDF-файлами
+### ├── local_rag.py                # Основной консольный ассистент
+### ├── rag.py                      # RAG модуль (эмбеддинги, поиск)
+### ├── requirements.txt            # Зависимости
+### ├── .env.example                # Пример переменных окружения
+### ├── docker-compose.yml          # Для Langfuse
+### └── README.md                   # Документация
+# 🔧 Конфигурация
+.env файл
+  
 ### Ollama (локальная модель)
 OLLAMA_BASE=http://localhost:11434/v1
 OLLAMA_MODEL=qwen3:4b
@@ -118,7 +115,7 @@ OLLAMA_MODEL=qwen3:4b
 ### Tavily API (веб-поиск)
 TAVILY_API_KEY=tvly-...
 
-# Langfuse (опционально)
+### Langfuse (опционально)
 LANGFUSE_PUBLIC_KEY=pk-...
 LANGFUSE_SECRET_KEY=sk-...
 LANGFUSE_HOST=http://localhost:3000
