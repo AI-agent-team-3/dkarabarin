@@ -1,93 +1,223 @@
-# Интерактивный учебник по Langfuse
+# 🔥 Бот-преподаватель по технической термодинамике
 
-Практический курс по наблюдаемости (observability) LLM-приложений с фокусом на AI Safety и LLMSecOps.
+Telegram-бот на основе RAG (Retrieval-Augmented Generation) для помощи студентам в изучении технической термодинамики, выполнении лабораторных работ и подготовке к экзаменам.
 
-Часть серии для обучения LLM-инженеров. Предполагает знакомство с RAG и ИИ-агентами (см. `common_ai_agents`).
+## 📚 Особенности
 
-> Этот учебный проект зафиксирован на стеке **Langfuse 2.x + локальный Docker Compose**.
-> Если вы сверяетесь с актуальной документацией Langfuse 3.x/4.x, архитектура self-hosted может отличаться.
+- **RAG на PDF-документах** — загружайте учебники и методички в папку `books/`
+- **Веб-поиск через Tavily** — актуальная информация из интернета
+- **Локальная модель Ollama** — работа без интернета и бесплатно
+- **Удалённая модель OpenRouter** — доступ к Llama, Mistral, Gemma
+- **Безопасность** — PII фильтрация, защита от prompt injection
+- **Langfuse** — наблюдаемость и трассировка (опционально)
 
-## Что вы изучите
+## 🚀 Быстрый старт
 
-- Трассировка LLM-вызовов с помощью Langfuse
-- Декоратор `@observe()`, Spans, Generations, Events
-- Интеграция с OpenRouter и LangChain
-- Управление промптами (версионирование, A/B-тесты)
-- Оценка и скоринг качества LLM
-- Датасеты и эксперименты
-- Трассировка ИИ-агента с RAG и Web-search
-- LLMSecOps: мониторинг безопасности, PII-фильтрация, детекция prompt injection
-
-## Быстрый старт
-
-### 1. Поднять локальный Langfuse
+### 1. Клонирование репозитория
 
 ```bash
-docker compose up -d
-```
+git clone https://github.com/yourusername/thermodynamics-bot.git
+cd thermodynamics-bot
+2. Установка Python
+Windows:
 
-Откройте http://localhost:3000, создайте аккаунт и проект. Скопируйте ключи API.
+Скачайте Python 3.11 с python.org
 
-### 2. Настроить окружение
+При установке поставьте галочку "Add Python to PATH"
 
-```bash
-# Рекомендуемая версия Python: 3.10-3.12
-python -m venv .venv
-# Windows:
-.\.venv\Scripts\Activate.ps1
-# Linux/macOS:
-source .venv/bin/activate
+Linux/Mac:
 
-pip install -r requirements.txt
-```
+bash
+# Ubuntu/Debian
+sudo apt update && sudo apt install python3.11 python3.11-venv
 
-### 3. Настроить API-ключи
+# Mac
+brew install python@3.11
+3. Установка Ollama (для локальной версии)
+Windows:
 
-```bash
+Скачайте с ollama.ai/download/windows
+
+Установите и запустите
+
+Загрузите модель: ollama pull qwen3:4b
+
+Linux/Mac:
+
+bash
+curl -fsSL https://ollama.ai/install.sh | sh
+ollama pull qwen3:4b
+4. Настройка окружения
+bash
+# Копируем файл с переменными окружения
 cp .env.example .env
-# Заполните .env своими ключами
-# При необходимости зафиксируйте модель:
-# OPENROUTER_MODEL=openai/gpt-oss-20b:free
-# OPENROUTER_AGENT_MODEL=openrouter/free
-```
 
-### 4. Запустить ноутбук
+# Редактируем .env, добавляем токены
+nano .env  # или любой редактор
+Обязательные переменные:
 
-```bash
-jupyter notebook langfuse_notebook.ipynb
-```
+BOT_TOKEN — токен Telegram бота (получить у @BotFather)
 
-## Необходимые API-ключи
+TAVILY_API_KEY — ключ для веб-поиска (https://app.tavily.com/)
 
-| Ключ | Где получить | Обязательно |
-|------|-------------|-------------|
-| `OPENROUTER_API_KEY` | https://openrouter.ai/keys | Да |
-| `LANGFUSE_PUBLIC_KEY` | Локальный Langfuse → Settings → API Keys | Да |
-| `LANGFUSE_SECRET_KEY` | Локальный Langfuse → Settings → API Keys | Да |
+5. Установка зависимостей
+Windows:
 
-## Системные требования
+cmd
+python -m venv venv
+venv\Scripts\activate.bat
+pip install -r requirements.txt
+Linux/Mac:
 
-- Python 3.10-3.12
-- Docker и Docker Compose (для локального Langfuse)
-- 4-8 GB RAM
-- Доступ в интернет (для OpenRouter API, Hugging Face и веб-поиска)
+bash
+python3.11 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+6. Подготовка базы знаний
+bash
+# Создаём папку для книг
+mkdir books
 
-## Preflight checklist
+# Добавляем PDF-файлы по термодинамике
+# Например: термодинамика.pdf, лабораторные.pdf
+7. Запуск бота
+Локальная версия (Ollama):
 
-- `docker compose up -d` завершился успешно, а Langfuse доступен на `http://localhost:3000`
-- В `.env` заполнены `OPENROUTER_API_KEY`, `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`
-- При первом запуске раздела 8 будет скачана embedding-модель `sentence-transformers/all-MiniLM-L6-v2`
-- Если нужен полностью воспроизводимый запуск, задайте `OPENROUTER_MODEL` и `OPENROUTER_AGENT_MODEL` явно
+bash
+python bot-local.py
+Удалённая версия (OpenRouter):
 
-## Структура проекта
+bash
+python bot.py
+📖 Команды бота
+Команда	Описание
+/start	Приветственное сообщение
+/help	Справка
+/clear	Очистить историю диалога
+/stats	Статистика использования
+/ollama	Статус Ollama (локальная версия)
+🔧 Архитектура
+text
+┌─────────────────────────────────────────────────────────────┐
+│                    Telegram User                            │
+└─────────────────────────┬───────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    Telegram Bot                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │ 1. Safety Check (PII + Injection + Rate Limit)    │   │
+│  └─────────────────────────────────────────────────────┘   │
+└─────────────────────────┬───────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    RAG Pipeline                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │ 2. FAISS Search (PDF documents)                    │   │
+│  │    ↓ if not found                                   │   │
+│  │ 3. Tavily Web Search                               │   │
+│  └─────────────────────────────────────────────────────┘   │
+└─────────────────────────┬───────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    LLM (Ollama / OpenRouter)                │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │ 4. Generation with context                         │   │
+│  └─────────────────────────────────────────────────────┘   │
+└─────────────────────────┬───────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    Langfuse (Observability)                 │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │ Traces, Scores, Sessions, Prompts                   │   │
+│  └─────────────────────────────────────────────────────┘   │
+🛡️ Безопасность
+Бот реализует многоуровневую защиту:
 
-```
-├── langfuse_notebook.ipynb   # Основной учебник
-├── docker-compose.yml        # Локальный Langfuse
-├── requirements.txt          # Зависимости Python
-├── data/                     # Учебные документы для RAG
-```
+PII-фильтрация — маскирует email, телефоны, паспорта, СНИЛС
 
-## Лицензия
+Injection-детекция — блокирует попытки манипуляции промптом
 
-MIT
+Rate limiting — не более 1 запроса в 5 секунд
+
+Максимальная длина сообщения — 4000 символов
+
+📊 Технологии
+Компонент	Технология
+LLM	Ollama (qwen3:4b) / OpenRouter (Llama-3, Mistral)
+RAG	LangChain + FAISS + BGE-M3
+Web Search	Tavily API
+Observability	Langfuse
+Bot Framework	python-telegram-bot
+📝 Примеры использования
+text
+👤 Студент: Как рассчитать работу газа в изотермическом процессе?
+
+🤖 Бот: 📚 Для изотермического процесса (T = const) работа расширения 
+газа рассчитывается по формуле:
+
+l = R·T·ln(v₂/v₁) = R·T·ln(P₁/P₂)
+
+где:
+• R — газовая постоянная
+• T — абсолютная температура
+• v₁, v₂ — удельные объёмы
+• P₁, P₂ — давления
+
+📚 Источники: термодинамика_лекции.pdf
+text
+👤 Студент: Помогите с лабораторной работой №3
+
+🤖 Бот: 📚 В лабораторной работе №3 вы измеряете давление при разных 
+температурах. Для обработки данных:
+
+1. Переведите все значения в Паскали (1 бар = 10⁵ Па)
+2. Постройте график P = f(T)
+3. Используйте уравнение Менделеева-Клапейрона
+4. Рассчитайте погрешность измерений
+
+Нужна помощь с конкретным этапом?
+🐛 Устранение проблем
+Бот не отвечает
+Проверьте токен в .env
+
+Убедитесь, что бот добавлен в чат
+
+Ошибка загрузки PDF
+Проверьте, что файлы в папке books/ имеют расширение .pdf
+
+Убедитесь, что файлы не повреждены
+
+Ollama не доступен
+bash
+# Проверьте статус
+ollama list
+
+# Запустите сервер
+ollama serve
+
+# Загрузите модель
+ollama pull qwen3:4b
+Проблемы с памятью
+Уменьшите параметры в rag.py:
+
+python
+CHUNK_SIZE = 500      # вместо 800
+CHUNK_OVERLAP = 100   # вместо 150
+K_RETRIEVAL = 3       # вместо 5
+📄 Лицензия
+MIT License
+
+🙏 Благодарности
+LangChain — фреймворк для LLM
+
+FAISS — векторный поиск
+
+Ollama — локальный запуск LLM
+
+Tavily — поиск для AI
+
+Langfuse — наблюдаемость LLM
