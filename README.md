@@ -30,71 +30,7 @@ pip install -r requirements.txt
 9. При необходимости запустите Langfuse: `docker compose up -d`  
 10. Запустите ассистента: `python local_rag.py`
 
----
-
-**Следующий вопрос:**
-```# 🔥 Thermodynamics RAG Assistant
-
-# Локальный ИИ-ассистент для изучения технической термодинамики с поддержкой RAG (Retrieval-Augmented Generation).
-
-
-# 📚 Основные возможности
-• RAG на PDF-документах: загружайте учебники и методички в папку `books/`.
-• Локальная LLM через Ollama: запуск без интернета, бесплатно.
-• Веб-поиск через Tavily: получает актуальную информацию из интернета.
-• Полная наблюдаемость через Langfuse: трассировка всех запросов.
-• Гибридный поиск: сначала ищет в PDF, затем — в интернете, затем — в LLM.
-• Консольный интерфейс: удобно и без Telegram.
-
-
-# 🚀 Быстрый старт
-
-## 1. Установка Python 3.11
-
-## 2. Установка Ollama
-Windows:  
-• Скачайте с ollama.ai/download/windows  
-• Установите и запустите.
-
-Linux/Mac:
-curl -fsSL https://ollama.ai/install.sh | sh
-
-Загрузите модель:
-ollama pull qwen3:4b
-
-
-## 3. Получение API ключей
-• Tavily API: зарегистрируйтесь на app.tavily.com, получите бесплатный API-ключ (1000 запросов/мес).
-• Langfuse: запустите локально через Docker или используйте cloud.langfuse.com.
-
-## 4. Установка проекта
-git clone https://github.com/yourusername/thermodynamics-rag.git
-cd thermodynamics-rag
-python -m venv venv
-
-Linux/Mac:
-source venv/bin/activate
-
-Windows:
-venv\Scripts\activate.bat
-pip install -r requirements.txt
-
-
-## 5. Настройка окружения
-cp .env.example .env
-Отредактируйте .env, добавьте API-ключи
-
-
-## 6. Подготовка базы знаний
-mkdir books
-добавьте PDF-файлы по термодинамике в папку books/
-
-## 7. Запуск Langfuse (опционально)
-docker compose up -d
-
-## 8. Запуск ассистента
-python local_rag.py
-
+```markdown
 # 📖 Использование
 Запросы вводите в консоль — ассистент ищет ответы по PDF, интернету и модели.
 
@@ -154,6 +90,7 @@ TAVILY_API_KEY=tvly-...
 LANGFUSE_PUBLIC_KEY=pk-...
 LANGFUSE_SECRET_KEY=sk-...
 LANGFUSE_HOST=http://localhost:3000
+```
 
 ### Модель эмбеддингов
 EMBEDDING_MODEL=e5-base  # e5-base, bge-m3, minilm, rubert
