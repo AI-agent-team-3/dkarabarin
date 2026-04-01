@@ -1,79 +1,81 @@
-# 🔥 Thermodynamics RAG Assistant
+🔥 Thermodynamics RAG Assistant
 
-Локальный ИИ-ассистент для изучения технической термодинамики с поддержкой RAG (Retrieval-Augmented Generation), веб-поиска через Tavily и полной наблюдаемостью через Langfuse.
+Локальный ИИ-ассистент для изучения технической термодинамики с поддержкой RAG (Retrieval-Augmented Generation).
 
-## 📚 Особенности
 
-- **RAG на PDF-документах** — загружайте учебники и методички в папку `books/`
-- **Локальная LLM через Ollama** — бесплатно, без интернета
-- **Веб-поиск через Tavily** — актуальная информация из интернета
-- **Полная наблюдаемость через Langfuse** — трассировка всех запросов
-- **Гибридный поиск** — сначала PDF, затем веб-поиск, затем LLM
-- **Консольный интерфейс** — удобная работа без Telegram
+📚 Основные возможности
+• RAG на PDF-документах: загружайте учебники и методички в папку `books/`.
+• Локальная LLM через Ollama: запуск без интернета, бесплатно.
+• Веб-поиск через Tavily: получает актуальную информацию из интернета.
+• Полная наблюдаемость через Langfuse: трассировка всех запросов.
+• Гибридный поиск: сначала ищет в PDF, затем — в интернете, затем — в LLM.
+• Консольный интерфейс: удобно и без Telegram.
 
-## 🚀 Быстрый старт
 
-### 1. Установка Python 3.11
+🚀 Быстрый старт
 
-**Windows:**
-- Скачайте Python 3.11 с [python.org](https://www.python.org/downloads/release/python-3110/)
-- При установке поставьте галочку "Add Python to PATH"
+1. Установка Python 3.11
+Windows:  
+• Скачайте с python.org  
+• Установите, поставьте галочку "Add Python to PATH"
 
-**Linux/Mac:**
-```bash
+Linux/Mac:
 # Ubuntu/Debian
 sudo apt update && sudo apt install python3.11 python3.11-venv
 
 # Mac
 brew install python@3.11
 
-### 2. Установка Ollama
-**Windows:**
 
--Скачайте с ollama.ai/download/windows
--Установите и запустите
+2. Установка Ollama
+Windows:  
+• Скачайте с ollama.ai/download/windows  
+• Установите и запустите.
 
-**Linux/Mac:**
-```bash
-# curl -fsSL https://ollama.ai/install.sh | sh
+Linux/Mac:
+curl -fsSL https://ollama.ai/install.sh | sh
+
 Загрузите модель:
-
-bash
 ollama pull qwen3:4b
+
+
 3. Получение API ключей
-Tavily API (для веб-поиска):
+• Tavily API: зарегистрируйтесь на app.tavily.com, получите бесплатный API-ключ (1000 запросов/мес).
+• Langfuse: запустите локально через Docker или используйте cloud.langfuse.com.
 
-Зарегистрируйтесь на app.tavily.com
-
-Получите бесплатный API ключ (1000 запросов/месяц)
-
-Langfuse (опционально, для наблюдаемости):
-
-Запустите локально через Docker или используйте cloud.langfuse.com
-
-4. Клонирование и установка
-bash
+4. Установка проекта
 git clone https://github.com/yourusername/thermodynamics-rag.git
 cd thermodynamics-rag
 python -m venv venv
-source venv/bin/activate  # Linux/Mac
-venv\Scripts\activate.bat  # Windows
+# Linux/Mac:
+source venv/bin/activate
+# Windows:
+venv\Scripts\activate.bat
 pip install -r requirements.txt
+
+
 5. Настройка окружения
-bash
 cp .env.example .env
-# Отредактируйте .env, добавьте ключи
+# Отредактируйте .env, добавьте API-ключи
+
+
 6. Подготовка базы знаний
-bash
 mkdir books
-# Добавьте PDF-файлы по термодинамике в папку books/
+# добавьте PDF-файлы по термодинамике в папку books/
+
+
 7. Запуск Langfuse (опционально)
-bash
 docker compose up -d
+
+
 8. Запуск ассистента
-bash
 python local_rag.py
+
+
+
 📖 Использование
+Запросы вводите в консоль — ассистент ищет ответы по PDF, интернету и модели.
+
 text
 ======================================================================
 🔥  ЛОКАЛЬНЫЙ КОНСУЛЬТАНТ ПО ТЕРМОДИНАМИКЕ  🔥
