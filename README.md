@@ -14,13 +14,11 @@ Telegram-бот на основе RAG (Retrieval-Augmented Generation) для п
 ## 🚀 Быстрый старт
 
 ### 1. Клонирование репозитория
-
 ```bash
 git clone https://github.com/yourusername/thermodynamics-bot.git
 cd thermodynamics-bot
 2. Установка Python
 Windows:
-
 Скачайте Python 3.11 с python.org
 
 При установке поставьте галочку "Add Python to PATH"
@@ -30,16 +28,12 @@ Linux/Mac:
 bash
 # Ubuntu/Debian
 sudo apt update && sudo apt install python3.11 python3.11-venv
-
 # Mac
 brew install python@3.11
 3. Установка Ollama (для локальной версии)
 Windows:
-
 Скачайте с ollama.ai/download/windows
-
 Установите и запустите
-
 Загрузите модель: ollama pull qwen3:4b
 
 Linux/Mac:
@@ -51,13 +45,10 @@ ollama pull qwen3:4b
 bash
 # Копируем файл с переменными окружения
 cp .env.example .env
-
 # Редактируем .env, добавляем токены
 nano .env  # или любой редактор
 Обязательные переменные:
-
 BOT_TOKEN — токен Telegram бота (получить у @BotFather)
-
 TAVILY_API_KEY — ключ для веб-поиска (https://app.tavily.com/)
 
 5. Установка зависимостей
