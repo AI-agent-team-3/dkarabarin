@@ -124,12 +124,12 @@ LANGFUSE_HOST=http://localhost:3000
 EMBEDDING_MODEL=e5-base  # e5-base, bge-m3, minilm, rubert
 
 ## Параметры RAG в rag.py
-python
-CHUNK_SIZE = 800          # Размер чанка (символы)
-CHUNK_OVERLAP = 150       # Перекрытие между чанками
-K_RETRIEVAL = 5           # Количество документов для поиска
-EMBEDDING_MODEL = "BAAI/bge-m3"  # Модель эмбеддингов
-📊 Модели эмбеддингов
+### python
+### CHUNK_SIZE = 800          # Размер чанка (символы)
+### CHUNK_OVERLAP = 150       # Перекрытие между чанками
+### K_RETRIEVAL = 5           # Количество документов для поиска
+### EMBEDDING_MODEL = "BAAI/bge-m3"  # Модель эмбеддингов
+# 📊 Модели эмбеддингов
 Модель	Размер	RAM	Качество	Рекомендация
 intfloat/multilingual-e5-base	278M	1.5GB	Отличное	Лучший выбор
 BAAI/bge-m3	568M	2.5GB	Максимальное	Для мощных ПК
