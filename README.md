@@ -15,17 +15,6 @@
 # 🚀 Быстрый старт
 
 ## 1. Установка Python 3.11
-Windows:  
-• Скачайте с python.org  
-• Установите, поставьте галочку "Add Python to PATH"
-
-###Linux/Mac:
-# Ubuntu/Debian
-sudo apt update && sudo apt install python3.11 python3.11-venv
-
-### Mac
-brew install python@3.11
-
 
 ## 2. Установка Ollama
 Windows:  
@@ -39,11 +28,11 @@ curl -fsSL https://ollama.ai/install.sh | sh
 ollama pull qwen3:4b
 
 
-### 3. Получение API ключей
+## 3. Получение API ключей
 • Tavily API: зарегистрируйтесь на app.tavily.com, получите бесплатный API-ключ (1000 запросов/мес).
 • Langfuse: запустите локально через Docker или используйте cloud.langfuse.com.
 
-### 4. Установка проекта
+## 4. Установка проекта
 git clone https://github.com/yourusername/thermodynamics-rag.git
 cd thermodynamics-rag
 python -m venv venv
