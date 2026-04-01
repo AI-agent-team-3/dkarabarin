@@ -1,4 +1,4 @@
-#🔥 Thermodynamics RAG Assistant
+# 🔥 Thermodynamics RAG Assistant
 
 #Локальный ИИ-ассистент для изучения технической термодинамики с поддержкой RAG (Retrieval-Augmented Generation).
 
