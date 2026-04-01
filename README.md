@@ -45,16 +45,14 @@
   - Запустите локально через Docker или используйте [cloud.langfuse.com](https://cloud.langfuse.com).
 ### 4. Клонирование и установка
 ```bash
-git clone https://github.com/yourusername/thermodynamics-rag.git
-cd thermodynamics-rag
-python -m venv venv
-# Активируйте виртуальное окружение:
-# Linux/Mac: venv/bin/activate
-# Windows: venv\Scripts\activate.bat
-pip install -r requirements.txt
+ git clone https://github.com/yourusername/thermodynamics-rag.git
+ cd thermodynamics-rag
+ python -m venv venv
+ # Активируйте виртуальное окружение:
+ # Linux/Mac: venv/bin/activate
+ # Windows: venv\Scripts\activate.bat
+ pip install -r requirements.txt.
 
-
-```markdown
 ### 5. Настройка окружения
 ```plaintext
 cp .env.example .env
