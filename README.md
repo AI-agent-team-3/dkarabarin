@@ -37,3 +37,18 @@
   ```bash
   curl -fsSL https://ollama.ai/install.sh | sh
   ollama pull qwen3:4b
+### 3. Получение API ключей
+- **Tavily API (веб-поиск):**  
+  - Зарегистрируйтесь на [app.tavily.com](https://app.tavily.com)  
+  - Получите бесплатный API-ключ (1000 запросов/месяц).
+  - - **Langfuse (опционально, для наблюдаемости):**  
+  - Запустите локально через Docker или используйте [cloud.langfuse.com](https://cloud.langfuse.com).
+### 4. Клонирование и установка
+```bash
+git clone https://github.com/yourusername/thermodynamics-rag.git
+cd thermodynamics-rag
+python -m venv venv
+# Активируйте виртуальное окружение:
+# Linux/Mac: venv/bin/activate
+# Windows: venv\Scripts\activate.bat
+pip install -r requirements.txt
