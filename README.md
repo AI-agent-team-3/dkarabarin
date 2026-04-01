@@ -109,8 +109,8 @@ thermodynamics-rag/
 ├── .env.example                # Шаблон переменных окружения
 ├── docker-compose.yml          # Для запуска Langfuse
 └── README.md                   # Документация
+
 # Конфигурация окружения (.env)
-plaintext
 ### Ollama (локальная модель)
 OLLAMA_BASE=http://localhost:11434/v1
 OLLAMA_MODEL=qwen3:4b
@@ -122,6 +122,13 @@ LANGFUSE_SECRET_KEY=sk-...
 LANGFUSE_HOST=http://localhost:3000
 ### Модель эмбеддингов
 EMBEDDING_MODEL=e5-base  # или bge-m3, minilm, rubert
+
+# Параметры RAG в rag.py
+python
+CHUNK_SIZE = 800          # Размер чанка (символы)
+CHUNK_OVERLAP = 150       # Перекрытие между чанками
+K_RETRIEVAL = 5           # Количество документов для поиска
+EMBEDDING_MODEL = "BAAI/bge-m3"  # Модель эмбеддингов
 
 # Советы по решению проблем
 ### Ollama не запускается:
