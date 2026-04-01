@@ -55,7 +55,6 @@ python local_rag.py
 Запросы вводите в консоль — ассистент ищет ответы по PDF, интернету и модели.
 Пример интерфейса (вывод):
 
-
 ======================================================================
 🔥  ЛОКАЛЬНЫЙ КОНСУЛЬТАНТ ПО ТЕРМОДИНАМИКЕ  🔥
 ======================================================================
@@ -110,39 +109,31 @@ thermodynamics-rag/
 ├── .env.example                # Шаблон переменных окружения
 ├── docker-compose.yml          # Для запуска Langfuse
 └── README.md                   # Документация
-Конфигурация окружения (.env)
+# Конфигурация окружения (.env)
 plaintext
-
-# Ollama (локальная модель)
+### Ollama (локальная модель)
 OLLAMA_BASE=http://localhost:11434/v1
 OLLAMA_MODEL=qwen3:4b
-
-# Tavily API
+### Tavily API
 TAVILY_API_KEY=tvly-...
-
-# Langfuse (опционально)
+### Langfuse (опционально)
 LANGFUSE_PUBLIC_KEY=pk-...
 LANGFUSE_SECRET_KEY=sk-...
 LANGFUSE_HOST=http://localhost:3000
-
-# Модель эмбеддингов
+### Модель эмбеддингов
 EMBEDDING_MODEL=e5-base  # или bge-m3, minilm, rubert
-Советы по решению проблем
-Ollama не запускается:
-bash
 
+# Советы по решению проблем
+### Ollama не запускается:
 ollama listollama serveollama pull qwen3:4b
-Langfuse не подключается:
-bash
-
+### Langfuse не подключается:
 docker psdocker compose up -dcurl http://localhost:3000/api/health
-Нет PDF-файлов:
-bash
-
+### Нет PDF-файлов:
 mkdir books# и добавьте свои PDF
-Память проблем:
+### Память проблем:
 Уменьшите параметры CHUNK_SIZE, CHUNK_OVERLAP, K_RETRIEVAL в rag.py.
-Безопасность и конфиденциальность
+
+# Безопасность и конфиденциальность
 Все данные хранятся локально
 PDF-файлы не уходят в облако
 Веб-поиск происходит только по вашему запросу
