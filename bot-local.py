@@ -1,6 +1,6 @@
 """
 Локальная RAG система для работы с PDF-документами по термодинамике
-Работает напрямую с Ollama, без Telegram
+С интеграцией Langfuse для мониторинга и трассировки
 """
 
 import os
@@ -10,6 +10,7 @@ import warnings
 from pathlib import Path
 from typing import Optional
 import time
+from datetime import datetime
 
 from dotenv import load_dotenv
 
@@ -19,6 +20,10 @@ from langchain_core.messages import HumanMessage, SystemMessage
 
 # Tavily для веб-поиска
 from tavily import TavilyClient
+
+# Langfuse для наблюдаемости
+from langfuse import Langfuse
+from langfuse.decorators import observe, langfuse_context
 
 # Наш RAG модуль
 from rag import ThermodynamicsKnowledgeBase
@@ -43,6 +48,12 @@ OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen3:4b")
 # Tavily
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 
+# Langfuse
+LANGFUSE_PUBLIC_KEY = os.getenv("LANGFUSE_PUBLIC_KEY")
+LANGFUSE_SECRET_KEY = os.getenv("LANGFUSE_SECRET_KEY")
+LANGFUSE_HOST = os.getenv("LANGFUSE_HOST", "http://localhost:3000")
+LANGFUSE_ENABLED = False
+
 # Параметры RAG
 K_RETRIEVAL = 5
 MAX_HISTORY = 10
@@ -63,6 +74,30 @@ SYSTEM_PROMPT = """Ты — преподаватель по техническо
 
 Отвечай на языке вопроса. Будь строгим, но вежливым.
 """
+
+
+# ============================================================================
+# Инициализация Langfuse
+# ============================================================================
+
+langfuse = None
+if LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY:
+    try:
+        langfuse = Langfuse(
+            public_key=LANGFUSE_PUBLIC_KEY,
+            secret_key=LANGFUSE_SECRET_KEY,
+            host=LANGFUSE_HOST,
+        )
+        # Проверка подключения
+        langfuse.auth_check()
+        LANGFUSE_ENABLED = True
+        print("✅ Langfuse инициализирован")
+        print(f"   URL: {LANGFUSE_HOST}")
+    except Exception as e:
+        print(f"⚠️ Langfuse не инициализирован: {e}")
+        print("   Продолжаем работу без трассировки")
+else:
+    print("⚠️ Langfuse отключен (нет ключей в .env)")
 
 
 # ============================================================================
@@ -126,17 +161,33 @@ knowledge_base.load()
 
 
 # ============================================================================
-# Основные функции
+# Функции с трассировкой Langfuse
 # ============================================================================
 
-def answer_from_pdf(question: str) -> Optional[str]:
-    """Отвечает на вопрос из PDF-документов."""
+@observe()
+def answer_from_pdf(question: str, trace_id: str = None) -> Optional[str]:
+    """Отвечает на вопрос из PDF-документов с трассировкой."""
     if not knowledge_base.vectorstore:
         return None
+    
+    # Обновляем метаданные трассировки
+    if LANGFUSE_ENABLED:
+        langfuse_context.update_current_observation(
+            metadata={"source": "pdf", "k_retrieval": K_RETRIEVAL}
+        )
     
     context_chunks = knowledge_base.get_relevant_chunks(question, k=K_RETRIEVAL)
     if not context_chunks:
         return None
+    
+    # Сохраняем найденные чанки в трассировку
+    if LANGFUSE_ENABLED:
+        langfuse_context.update_current_observation(
+            metadata={
+                "chunks_found": len(context_chunks),
+                "chunks_preview": [c[:200] for c in context_chunks[:3]]
+            }
+        )
     
     context = "\n\n---\n\n".join(context_chunks)
     messages = [
@@ -157,20 +208,43 @@ def answer_from_pdf(question: str) -> Optional[str]:
         if sources:
             answer += f"\n\n📚 Источники:\n" + "\n".join([f"  • {s}" for s in sources])
         
+        # Сохраняем метрики
+        if LANGFUSE_ENABLED:
+            langfuse_context.update_current_observation(
+                output=answer,
+                metadata={"answer_length": len(answer), "sources_count": len(sources)}
+            )
+        
         return answer
     except Exception as e:
         logger.error(f"Ошибка RAG: {e}")
+        if LANGFUSE_ENABLED:
+            langfuse_context.update_current_observation(
+                level="ERROR",
+                status_message=str(e)
+            )
         return None
 
 
-def answer_from_web(question: str) -> Optional[str]:
-    """Отвечает на вопрос через веб-поиск."""
+@observe()
+def answer_from_web(question: str, trace_id: str = None) -> Optional[str]:
+    """Отвечает на вопрос через веб-поиск с трассировкой."""
     if not tavily.is_available():
         return None
+    
+    if LANGFUSE_ENABLED:
+        langfuse_context.update_current_observation(
+            metadata={"source": "web", "search_engine": "tavily"}
+        )
     
     search_results = tavily.search(question, max_results=3)
     if not search_results:
         return None
+    
+    if LANGFUSE_ENABLED:
+        langfuse_context.update_current_observation(
+            metadata={"search_results_length": len(search_results)}
+        )
     
     messages = [
         SystemMessage(content=SYSTEM_PROMPT),
@@ -180,44 +254,105 @@ def answer_from_web(question: str) -> Optional[str]:
     
     try:
         response = llm.invoke(messages)
-        return response.content
+        answer = response.content
+        
+        if LANGFUSE_ENABLED:
+            langfuse_context.update_current_observation(
+                output=answer,
+                metadata={"answer_length": len(answer)}
+            )
+        
+        return answer
     except Exception as e:
         logger.error(f"Ошибка веб-ответа: {e}")
+        if LANGFUSE_ENABLED:
+            langfuse_context.update_current_observation(
+                level="ERROR",
+                status_message=str(e)
+            )
         return None
 
 
-def answer_direct(question: str) -> str:
-    """Отвечает без контекста (только LLM)."""
+@observe()
+def answer_direct(question: str, trace_id: str = None) -> str:
+    """Отвечает без контекста (только LLM) с трассировкой."""
+    if LANGFUSE_ENABLED:
+        langfuse_context.update_current_observation(
+            metadata={"source": "llm_only", "model": OLLAMA_MODEL}
+        )
+    
     messages = [SystemMessage(content=SYSTEM_PROMPT), HumanMessage(content=question)]
-    response = llm.invoke(messages)
-    return response.content
+    
+    try:
+        response = llm.invoke(messages)
+        answer = response.content
+        
+        if LANGFUSE_ENABLED:
+            langfuse_context.update_current_observation(
+                output=answer,
+                metadata={"answer_length": len(answer)}
+            )
+        
+        return answer
+    except Exception as e:
+        logger.error(f"Ошибка LLM: {e}")
+        if LANGFUSE_ENABLED:
+            langfuse_context.update_current_observation(
+                level="ERROR",
+                status_message=str(e)
+            )
+        return f"Ошибка: {e}"
 
 
-def get_answer(question: str) -> tuple[str, str]:
-    """Получает ответ с указанием источника."""
+@observe()
+def get_answer(question: str, session_id: str = None) -> tuple[str, str]:
+    """
+    Получает ответ с указанием источника.
+    Вся функция трассируется как единый span.
+    """
+    if LANGFUSE_ENABLED:
+        langfuse_context.update_current_trace(
+            name="question_answer",
+            user_id="local_user",
+            session_id=session_id or datetime.now().strftime("%Y%m%d_%H%M%S"),
+            tags=["thermodynamics", "local_rag"],
+            metadata={"question": question, "model": OLLAMA_MODEL}
+        )
+    
+    # Пробуем PDF
     print("  🔍 Поиск в PDF...")
     answer = answer_from_pdf(question)
     if answer:
+        if LANGFUSE_ENABLED:
+            langfuse_context.score_current_trace(
+                name="source",
+                value=1.0,
+                comment="Ответ найден в PDF"
+            )
         return answer, "📚 PDF"
     
+    # Пробуем веб-поиск
     print("  🌐 Поиск в интернете (Tavily)...")
     answer = answer_from_web(question)
     if answer:
+        if LANGFUSE_ENABLED:
+            langfuse_context.score_current_trace(
+                name="source",
+                value=0.7,
+                comment="Ответ найден через веб-поиск"
+            )
         return answer, "🌐 Интернет"
     
+    # Используем LLM
     print("  🤖 Использование LLM...")
     answer = answer_direct(question)
+    if LANGFUSE_ENABLED:
+        langfuse_context.score_current_trace(
+            name="source",
+            value=0.3,
+            comment="Ответ из LLM (нет в базе знаний)"
+        )
     return answer, "🤖 LLM"
-
-
-def check_ollama():
-    """Проверяет доступность Ollama."""
-    try:
-        import requests
-        response = requests.get(f"{OLLAMA_BASE}/models", timeout=5)
-        return response.status_code == 200
-    except:
-        return False
 
 
 # ============================================================================
@@ -243,12 +378,14 @@ def print_header():
     
     print(f"🤖 Модель: {OLLAMA_MODEL}")
     print(f"🌐 Веб-поиск: {'✅ доступен' if tavily.is_available() else '❌ недоступен'}")
+    print(f"📊 Langfuse: {'✅ активен' if LANGFUSE_ENABLED else '❌ неактивен'}")
     print("="*70)
     print()
     print("💡 Введите вопрос по термодинамике или команду:")
     print("   /clear  - очистить историю")
     print("   /stats  - статистика")
     print("   /ollama - статус Ollama")
+    print("   /langfuse - статус Langfuse")
     print("   /quit   - выход")
     print()
 
@@ -266,6 +403,9 @@ def print_stats():
     print(f"Модель эмбеддингов: {stats.get('embedding_model', 'N/A')}")
     print(f"Веб-поиск: {'✅ доступен' if tavily.is_available() else '❌ недоступен'}")
     print(f"Ollama: {'✅ доступен' if check_ollama() else '❌ недоступен'}")
+    print(f"Langfuse: {'✅ активен' if LANGFUSE_ENABLED else '❌ неактивен'}")
+    if LANGFUSE_ENABLED:
+        print(f"Langfuse URL: {LANGFUSE_HOST}")
     print("="*70)
 
 
@@ -294,6 +434,57 @@ def print_ollama_status():
     print("="*70)
 
 
+def print_langfuse_status():
+    """Выводит статус Langfuse."""
+    print("\n" + "="*70)
+    print("📊 СТАТУС LANGFUSE")
+    print("="*70)
+    
+    if LANGFUSE_ENABLED:
+        print("✅ Langfuse активен")
+        print(f"   URL: {LANGFUSE_HOST}")
+        print()
+        print("Для просмотра трассировок:")
+        print(f"  Откройте: {LANGFUSE_HOST}")
+        print("  Перейдите в раздел Traces")
+        print()
+        print("Что трассируется:")
+        print("  • Каждый вопрос пользователя")
+        print("  • Источник ответа (PDF/Web/LLM)")
+        print("  • Время выполнения")
+        print("  • Количество найденных чанков")
+        print("  • Длина ответа")
+        print("  • Ошибки (если есть)")
+    else:
+        print("❌ Langfuse не активен")
+        print()
+        print("Для активации добавьте в .env:")
+        print("  LANGFUSE_PUBLIC_KEY=pk-...")
+        print("  LANGFUSE_SECRET_KEY=sk-...")
+        print("  LANGFUSE_HOST=http://localhost:3000")
+        print()
+        print("Запустите Langfuse:")
+        print("  docker compose up -d")
+    print("="*70)
+
+
+def check_ollama():
+    """Проверяет доступность Ollama."""
+    try:
+        import requests
+        response = requests.get(f"{OLLAMA_BASE}/models", timeout=5)
+        return response.status_code == 200
+    except:
+        return False
+
+
+def flush_langfuse():
+    """Отправляет все данные в Langfuse."""
+    if LANGFUSE_ENABLED and langfuse:
+        langfuse.flush()
+        print("✅ Данные отправлены в Langfuse")
+
+
 # ============================================================================
 # Главный цикл
 # ============================================================================
@@ -311,6 +502,7 @@ def main():
         print("="*70)
         print()
     
+    session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
     history = []
     
     while True:
@@ -323,6 +515,7 @@ def main():
             
             # Обработка команд
             if user_input.lower() == '/quit':
+                flush_langfuse()
                 print("\n👋 До свидания!")
                 break
             elif user_input.lower() == '/clear':
@@ -337,15 +530,19 @@ def main():
                 print_ollama_status()
                 print()
                 continue
+            elif user_input.lower() == '/langfuse':
+                print_langfuse_status()
+                print()
+                continue
             elif user_input.lower() == '/help':
                 print_header()
                 continue
             
-            # Получение ответа
+            # Получение ответа с трассировкой
             print("\n⏳ Думаю...")
             start_time = time.time()
             
-            answer, source = get_answer(user_input)
+            answer, source = get_answer(user_input, session_id)
             
             elapsed = time.time() - start_time
             
@@ -363,12 +560,23 @@ def main():
             if len(history) > MAX_HISTORY:
                 history.pop(0)
             
+            # Периодическая отправка в Langfuse
+            if LANGFUSE_ENABLED and len(history) % 5 == 0:
+                flush_langfuse()
+            
         except KeyboardInterrupt:
+            flush_langfuse()
             print("\n\n👋 До свидания!")
             break
         except Exception as e:
             print(f"\n❌ Ошибка: {e}")
-            print()
+            if LANGFUSE_ENABLED:
+                try:
+                    trace = langfuse.trace(name="error", metadata={"error": str(e)})
+                    trace.event(name="exception", metadata={"error": str(e)})
+                    langfuse.flush()
+                except:
+                    pass
 
 
 # ============================================================================
