@@ -156,16 +156,15 @@
 
 ## Ollama (локальная модель)
 
-OLLAMA_BASE=http://localhost:11434/v1
-OLLAMA_MODEL=qwen3:4b
+    OLLAMA_BASE=http://localhost:11434/v1
+    OLLAMA_MODEL=qwen3:4b
 ## Tavily API
 
-    - TAVILY_API_KEY=tvly-...
+    TAVILY_API_KEY=tvly-...
 ## Langfuse (опционально)
-
-LANGFUSE_PUBLIC_KEY=pk-...
-LANGFUSE_SECRET_KEY=sk-...
-LANGFUSE_HOST=http://localhost:3000
+    LANGFUSE_PUBLIC_KEY=pk-...
+    LANGFUSE_SECRET_KEY=sk-...
+    LANGFUSE_HOST=http://localhost:3000
 ## Модель эмбеддингов
 EMBEDDING_MODEL=e5-base  # или bge-m3, minilm, rubert
 
