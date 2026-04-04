@@ -73,8 +73,8 @@
     - 🗑️ Кнопка очистки истории
     - 📱 Работает на любом устройстве
 ---
-## 🖼️ Пример интерфейса
-![examjpg](https://github.com/user-attachments/assets/5fcafa27-6408-4a30-9620-bc8b60342c09)
+## 🖼️ Внешний вид интерфейса
+![Uploading start.jpg…]()
 ## 📁 Структура проекта
 ```plaintext
 thermodynamics-rag/
