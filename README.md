@@ -100,6 +100,7 @@
 
 ## 📁 Структура проекта
 
+```plaintext
 thermodynamics-rag/
 ├── books/                    # Папка с PDF-файлами
 ├── web/                      # 🆕 Веб-интерфейс
@@ -115,7 +116,7 @@ thermodynamics-rag/
 ├── run_web.sh               # 🆕 Скрипт запуска веб-сервера (Linux/Mac)
 ├── run_web.bat              # 🆕 Скрипт запуска веб-сервера (Windows)
 └── README.md                # Документация
-
+```
 
 ## 🔧 API эндпоинты (веб-режим)
 
