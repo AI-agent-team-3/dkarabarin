@@ -166,51 +166,43 @@
     LANGFUSE_SECRET_KEY=sk-...
     LANGFUSE_HOST=http://localhost:3000
 ## Модель эмбеддингов
-EMBEDDING_MODEL=e5-base  # или bge-m3, minilm, rubert
+    EMBEDDING_MODEL=e5-base  # или bge-m3, minilm, rubert
 
 # 🤖 Модели эмбеддингов
-Модель	Размер	RAM	Качество	Рекомендация
-intfloat/multilingual-e5-base	278M	1.5GB	Отличное	⭐ Лучший выбор
-BAAI/bge-m3	568M	2.5GB	Максимальное	Для мощных ПК
-sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2	118M	500MB	Хорошее	Подходит для слабых ПК
-ai-forever/sbert_large_mt_nlu_ru	560M	2.2GB	Отличное	Для русского языка
 
-🐛 Советы по устранению проблем
-Ollama не запускается
-bash
+| Модель                                                             | Размер | RAM     | Качество    | Рекомендация                    |
+|--------------------------------------------------------------------|---------|---------|--------------|---------------------------------|
+| `intfloat/multilingual-e5-base`                                     | 278M    | 1.5GB   | Отличное     | ⭐ Лучший выбор                  |
+| `BAAI/bge-m3`                                                      | 568M    | 2.5GB   | Максимальное | Для мощных ПК                   |
+| `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`     | 118M    | 500MB   | Хорошее      | Подходит для слабых ПК        |
+| `ai-forever/sbert_large_mt_nlu_ru`                                 | 560M    | 2.2GB   | Отличное     | Для русского языка            |
 
-ollama list
-ollama serve
-ollama pull qwen3:4b
-Langfuse не подключается
-bash
-
-docker ps
-docker compose up -d
-curl http://localhost:3000/api/health
-Нет PDF-файлов
-bash
-
-mkdir books
-# добавьте свои PDF в папку books/
-Проблемы с памятью
-Уменьшите параметры CHUNK_SIZE, CHUNK_OVERLAP, K_RETRIEVAL в файле rag.py.
-Веб-интерфейс не открывается
-bash
-
-# Проверьте, что сервер запущен
-curl http://localhost:8000/api/health
-
-# Проверьте, занят ли порт
-netstat -ano | findstr :8000
-
-# Перезапустите сервер
-python -m uvicorn web.api:app --reload --port 8000
-Формулы не отображаются
-Очистите кэш браузера (Ctrl+Shift+Delete).
-Проверьте консоль браузера (F12) на ошибки MathJax.
-Обновите страницу (Ctrl+F5).
-🔒 Безопасность и конфиденциальность
+# 🐛 Советы по устранению проблем
+## Ollama не запускается
+    ollama list
+    ollama serve
+    ollama pull qwen3:4b
+## Langfuse не подключается
+    docker ps
+    docker compose up -d
+    curl http://localhost:3000/api/health
+## Нет PDF-файлов
+    mkdir books
+### добавьте свои PDF в папку books/
+## Проблемы с памятью
+    Уменьшите параметры CHUNK_SIZE, CHUNK_OVERLAP, K_RETRIEVAL в файле rag.py.
+## Веб-интерфейс не открывается
+### Проверьте, что сервер запущен
+    curl http://localhost:8000/api/health
+### Проверьте, занят ли порт
+    netstat -ano | findstr :8000
+### Перезапустите сервер
+    python -m uvicorn web.api:app --reload --port 8000
+## Формулы не отображаются
+    Очистите кэш браузера (Ctrl+Shift+Delete).
+    Проверьте консоль браузера (F12) на ошибки MathJax.
+    Обновите страницу (Ctrl+F5).
+# 🔒 Безопасность и конфиденциальность
 ✅ Все данные хранятся локально.
 ✅ PDF-файлы не уходят в облако.
 ✅ Веб-поиск активен только по вашему запросу.
