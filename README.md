@@ -96,3 +96,150 @@
 ---
 
 ## 🖼️ Пример интерфейса
+![examjpg](https://github.com/user-attachments/assets/5fcafa27-6408-4a30-9620-bc8b60342c09)
+
+## 📁 Структура проекта
+
+- `books/`  
+  Папка с PDF-файлами, содержащими материалы по термодинамике.
+
+- `web/`  
+  🆕 Веб-интерфейс (новая версия)  
+  ├── `api.py` — FastAPI сервер  
+  ├── `static/` — Статические файлы  
+  │   └── `index.html` — HTML интерфейс  
+  └── `README.md` — Документация веб-версии
+
+- `bot-local.py`  
+  Основной скрипт ассистента для командной строки.
+
+- `rag.py`  
+  Модуль RAG — поиск и работа с эмбеддингами.
+
+- `requirements.txt`  
+  Зависимости проекта.
+
+- `.env.example`  
+  Шаблон переменных окружения для настройки.
+
+- `docker-compose.yml`  
+  Для запуска Langfuse в Docker.
+
+- `run_web.sh`  
+  🆕 Скрипт запуска веб-сервера (Linux/Mac).
+
+- `run_web.bat`  
+  🆕 Скрипт запуска веб-сервера (Windows).
+
+- `README.md`  
+  Документация по проекту.
+
+---
+
+*Примечание:* Весь проект включает папку `books/` для материалов, связанных с термодинамикой, а также веб-часть для удобного взаимодействия.
+
+---
+
+## 🔧 API эндпоинты (веб-режим)
+
+| Эндпоинт      | Метод | Описание                |
+|---------------|-------|------------------------|
+| `/`           | GET   | Главная страница чата  |
+| `/api/health` | GET   | Проверка работоспособности |
+| `/api/stats`  | GET   | Статистика системы     |
+| `/api/chat`   | POST  | Отправка сообщения     |
+| `/api/clear`  | POST  | Очистка истории        |
+| `/api/history`| GET   | Получение истории      |
+
+### Пример запроса к API
+
+```bash
+curl -X POST http://localhost:8000/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message":"Что такое энтропия?","session_id":"test-123"}'
+Пример ответа
+json
+
+{
+  "reply": "Энтропия — это мера беспорядка в системе...",
+  "session_id": "test-123",
+  "source": "📚 PDF",
+  "processing_time": 2.34
+}
+⚙️ Конфигурация окружения (.env)
+env
+
+# Ollama (локальная модель)
+OLLAMA_BASE=http://localhost:11434/v1
+OLLAMA_MODEL=qwen3:4b
+
+# Tavily API
+TAVILY_API_KEY=tvly-...
+
+# Langfuse (опционально)
+LANGFUSE_PUBLIC_KEY=pk-...
+LANGFUSE_SECRET_KEY=sk-...
+LANGFUSE_HOST=http://localhost:3000
+
+# Модель эмбеддингов
+EMBEDDING_MODEL=e5-base  # или bge-m3, minilm, rubert
+🎛️ Параметры RAG (в rag.py)
+python
+
+CHUNK_SIZE = 800          # Размер чанка (символы)
+CHUNK_OVERLAP = 150       # Перекрытие между чанками
+K_RETRIEVAL = 5           # Количество документов для поиска
+🤖 Модели эмбеддингов
+Модель	Размер	RAM	Качество	Рекомендация
+intfloat/multilingual-e5-base	278M	1.5GB	Отличное	⭐ Лучший выбор
+BAAI/bge-m3	568M	2.5GB	Максимальное	Для мощных ПК
+sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2	118M	500MB	Хорошее	Для слабых ПК
+ai-forever/sbert_large_mt_nlu_ru	560M	2.2GB	Отличное	Для русского языка
+🐛 Советы по решению проблем
+Ollama не запускается:
+
+bash
+
+ollama list
+ollama serve
+ollama pull qwen3:4b
+Langfuse не подключается:
+
+bash
+
+docker ps
+docker compose up -d
+curl http://localhost:3000/api/health
+Нет PDF-файлов:
+
+bash
+
+mkdir books
+# и добавьте свои PDF
+Проблемы с памятью:
+
+Уменьшите параметры CHUNK_SIZE, CHUNK_OVERLAP, K_RETRIEVAL в rag.py
+Веб-интерфейс не открывается:
+
+bash
+
+# Проверьте что сервер запущен
+curl http://localhost:8000/api/health
+
+# Проверьте порт (возможно занят)
+netstat -ano | findstr :8000
+
+# Перезапустите сервер
+python -m uvicorn web.api:app --reload --port 8000
+Формулы не отображаются:
+
+Очистите кэш браузера (Ctrl+Shift+Delete)
+Проверьте консоль браузера (F12) на ошибки MathJax
+Обновите страницу (Ctrl+F5)
+🔒 Безопасность и конфиденциальность
+✅ Все данные хранятся локально
+✅ PDF-файлы не уходят в облако
+✅ Веб-поиск происходит только по вашему запросу
+✅ Langfuse можно запускать полностью локально
+✅ История диалогов хранится только в вашем браузере
+
