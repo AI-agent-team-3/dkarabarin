@@ -36,24 +36,19 @@
 
 ### 2. Установка Ollama
 
-# Загрузите модель
+#### Загрузите модель
 ollama pull qwen3:4b
-3. Получение API ключей
+### 3. Получение API ключей
 Tavily API (веб-поиск):
 Зарегистрируйтесь на app.tavily.com
-
 Получите бесплатный API ключ (1000 запросов/мес)
-
 Langfuse (опционально, для наблюдаемости):
 Запустите локально через Docker или используйте cloud.langfuse.com
-
-4. Клонирование и установка
-bash
+### 4. Клонирование и установка
 git clone <repository-url>
 cd thermodynamics-rag
 python -m venv venv
-
-# Активация виртуальной среды:
+##### Активация виртуальной среды:
 # Windows
 venv\Scripts\activate.bat
 # Linux / Mac
@@ -69,7 +64,7 @@ bash
 mkdir books
 # Поместите PDF-файлы по термодинамике в папку books/
 7. Запуск Langfuse (опционально)
-bash
+
 docker compose up -d
 8. Запуск ассистента
 Консольная версия:
