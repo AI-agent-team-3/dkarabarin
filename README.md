@@ -31,10 +31,8 @@
     python -m venv venv
     ```
     - Активация виртуальной среды:
-        - Windows:
-        -     `venv\Scripts\activate.bat`
-        - Linux/Mac:
-        -     `source venv/bin/activate`
+        - Windows:`venv\Scripts\activate.bat`
+        - Linux/Mac:`source venv/bin/activate`
     - Установка зависимостей: `pip install -r requirements.txt`
 5. **Настройка окружения**
     ```bash
