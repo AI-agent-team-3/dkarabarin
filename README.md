@@ -100,6 +100,7 @@
 
 ## 📁 Структура проекта
 
+```plaintext
 thermodynamics-rag/
 ├── books/                    # Папка с PDF-файлами
 ├── web/                      # 🆕 Веб-интерфейс
