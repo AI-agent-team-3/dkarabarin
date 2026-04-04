@@ -100,7 +100,21 @@
 
 ## 📁 Структура проекта
 
-thermodynamics-rag/ ├── books/ # Папка с PDF-файлами ├── web/ # 🆕 Веб-интерфейс │ ├── api.py # FastAPI сервер │ ├── static/ # Статические файлы │ │ └── index.html # HTML интерфейс │ └── README.md # Документация веб-версии ├── bot-local.py # Основной скрипт ассистента ├── rag.py # Модуль RAG (поиск, эмбеддинги) ├── requirements.txt # Зависимости ├── .env.example # Шаблон переменных окружения ├── docker-compose.yml # Для запуска Langfuse ├── run_web.sh # 🆕 Скрипт запуска веб-сервера (Linux/Mac) ├── run_web.bat # 🆕 Скрипт запуска веб-сервера (Windows) └── README.md # Документация
+thermodynamics-rag/
+├── books/                    # Папка с PDF-файлами
+├── web/                      # 🆕 Веб-интерфейс
+│   ├── api.py               # FastAPI сервер
+│   ├── static/              # Статические файлы
+│   │   └── index.html       # HTML интерфейс
+│   └── README.md            # Документация веб-версии
+├── bot-local.py             # Основной скрипт ассистента
+├── rag.py                   # Модуль RAG (поиск, эмбеддинги)
+├── requirements.txt         # Зависимости
+├── .env.example             # Шаблон переменных окружения
+├── docker-compose.yml       # Для запуска Langfuse
+├── run_web.sh               # 🆕 Скрипт запуска веб-сервера (Linux/Mac)
+├── run_web.bat              # 🆕 Скрипт запуска веб-сервера (Windows)
+└── README.md                # Документация
 
 
 ## 🔧 API эндпоинты (веб-режим)
