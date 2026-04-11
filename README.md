@@ -121,6 +121,8 @@ thermodynamics-rag/
 ├── bot-local.py             # Основной скрипт ассистента
 ├── bot.py                   # Скрипт для запуска tg боте
 ├── rag.py                   # Модуль RAG (поиск, эмбеддинги)
+├── security_guard.py        # Модуль безопасности
+├── security_tester.py       # Скрипт запуска проверки безопансости
 ├── requirements.txt         # Зависимости
 ├── .env.example             # Шаблон переменных окружения
 ├── docker-compose.yml       # Для запуска Langfuse
