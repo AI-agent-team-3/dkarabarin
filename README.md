@@ -89,7 +89,7 @@
         python -m uvicorn web.api:app --reload --host 0.0.0.0 --port 8000
         ```
         Затем откройте в браузере: [http://localhost:8000](http://localhost:8000)
-     - Тест безопасности:
+     - Тест безопасности, в новом окне терминала:
        ```bash
         python security_tester.py
 
