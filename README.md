@@ -90,7 +90,7 @@
         ```
         Затем откройте в браузере: [http://localhost:8000](http://localhost:8000)
       - Тест безопасности:
-      - ```bash
+       ```bash
         python security_tester.py
 
 ---
