@@ -7,124 +7,32 @@ from __future__ import annotations
 import logging
 import sys
 import time
-import re
+import asyncio
 import json
 from pathlib import Path
 from datetime import datetime
 from contextlib import asynccontextmanager
-from collections import defaultdict
-from typing import Tuple, Dict, Optional
+from typing import AsyncGenerator
 
-# Добавляем путь
 ROOT_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT_DIR))
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from pydantic import BaseModel, Field
+
+from guardrails_light import guardrails
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# ============================================================================
-# ВСТРОЕННАЯ СИСТЕМА БЕЗОПАСНОСТИ
-# ============================================================================
-
-class SecurityGuard:
-    """Встроенная система безопасности"""
-    
-    def __init__(self):
-        self.blocked_count = 0
-        self.request_log = defaultdict(list)
-    
-    BLOCK_PATTERNS = [
-        (r"(?i)(ignore|forget|disregard).*(instructions|rules|prompts?)", "prompt_injection"),
-        (r"(?i)(system|admin).*(override|reset|ignore)", "prompt_injection"),
-        (r"(?i)(reveal|show|print|display).*(system.*prompt)", "system_leak"),
-        (r"(?i)(jailbreak|dan mode|aim mode)", "jailbreak"),
-        (r"(?i)игнорируй.*инструкц", "prompt_injection"),
-        (r"(?i)забудь.*предыдущ", "prompt_injection"),
-        (r"(?i)системный промпт", "system_leak"),
-        (r"(?i)покажи.*промпт", "system_leak"),
-        (r"(?i)(готовые? ответы?|списать|сдуть)", "academic"),
-        (r"(?i)(сделай за меня|напиши за меня)", "academic"),
-        (r"(?i)(лабораторную за меня|курсовую за меня)", "academic"),
-        (r"(?i)(ответы на экзамен)", "academic"),
-        (r"(?i)как взломать", "dangerous"),
-    ]
-    
-    PII_PATTERNS = [
-        (r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b", "email"),
-        (r"\b\+?[78][\s-]?\(?\d{3}\)?[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{2}\b", "phone"),
-        (r"\b\d{4}\s?\d{6}\b", "passport"),
-        (r"\b\d{11}\b", "snils"),
-    ]
-    
-    EDUCATIONAL_PATTERNS = [
-        r"(?i)(термодинамик|тепломассообмен|энтропи|энтальпи)",
-        r"(?i)(формула|расчет|вычисление|определение)",
-        r"(?i)(лабораторн|практикум|эксперимент)",
-        r"(?i)(закон|правило|принцип)",
-        r"(?i)(первый закон|второй закон|третий закон)",
-        r"(?i)(цикл карно|кпд|эффективность)",
-        r"(?i)(идеальный газ|реальный газ)",
-        r"(?i)(теплопроводность|конвекция|излучение)",
-        r"(?i)(nusselt|reynolds|prandtl|fourier)",
-    ]
-    
-    def check(self, message: str, session_id: str) -> Tuple[bool, str]:
-        message_lower = message.lower()
-        
-        for pattern, category in self.BLOCK_PATTERNS:
-            if re.search(pattern, message_lower):
-                self.blocked_count += 1
-                return False, self._get_message(category)
-        
-        for pattern, _ in self.PII_PATTERNS:
-            if re.search(pattern, message):
-                self.blocked_count += 1
-                return False, "⚠️ Запрос содержит персональные данные. Пожалуйста, удалите их."
-        
-        now = time.time()
-        requests = self.request_log[session_id]
-        requests[:] = [t for t in requests if now - t < 60]
-        if len(requests) >= 10:
-            wait = 60 - (now - requests[0])
-            return False, f"⏳ Слишком много запросов. Подождите {wait:.0f} секунд."
-        requests.append(now)
-        
-        return True, ""
-    
-    def is_educational(self, message: str) -> bool:
-        message_lower = message.lower()
-        for pattern in self.EDUCATIONAL_PATTERNS:
-            if re.search(pattern, message_lower):
-                return True
-        return False
-    
-    def clean_pii(self, text: str) -> str:
-        for pattern, _ in self.PII_PATTERNS:
-            text = re.sub(pattern, "[СКРЫТО]", text)
-        return text
-    
-    def _get_message(self, category: str) -> str:
-        messages = {
-            "prompt_injection": "⛔ Запрос отклонен. Обнаружена попытка инъекции инструкций.",
-            "system_leak": "🔒 Запрос отклонен. Системная информация не разглашается.",
-            "jailbreak": "🚫 Запрос отклонен. Обнаружена попытка обхода безопасности.",
-            "dangerous": "⚠️ Запрос отклонен. Вопрос нарушает политику безопасности.",
-            "academic": "📚 Запрос отклонен. Я помогаю учиться, но не даю готовые ответы.",
-        }
-        return messages.get(category, "❌ Запрос отклонен.")
-
-security = SecurityGuard()
 
 # ============================================================================
 # Загрузка бота
 # ============================================================================
 
 get_answer = None
+get_answer_stream = None
 web_search = None
 knowledge_base = None
 OLLAMA_MODEL = "qwen3:4b"
@@ -139,6 +47,7 @@ if bot_local_path.exists():
         spec.loader.exec_module(bot_module)
         
         get_answer = getattr(bot_module, 'get_answer', None)
+        get_answer_stream = getattr(bot_module, 'get_answer_stream', None)
         web_search = getattr(bot_module, 'web_search', None)
         knowledge_base = getattr(bot_module, 'knowledge_base', None)
         OLLAMA_MODEL = getattr(bot_module, 'OLLAMA_MODEL', 'qwen3:4b')
@@ -151,6 +60,16 @@ if get_answer is None:
     def get_answer(question, session_id=None):
         return f"📚 **Вопрос:** {question}\n\n**Ответ:** Это тестовый режим. Для работы установите Ollama.", "⚠️ Тест"
 
+if get_answer_stream is None:
+    async def get_answer_stream(question: str, session_id: str = None) -> AsyncGenerator[str, None]:
+        answer, source = get_answer(question, session_id)
+        words = answer.split()
+        for i in range(0, len(words), 3):
+            chunk = ' '.join(words[i:i+3])
+            yield json.dumps({"chunk": chunk + " ", "source": source if i == 0 else None, "done": False}) + "\n"
+            await asyncio.sleep(0.03)
+        yield json.dumps({"chunk": "", "source": source, "done": True}) + "\n"
+
 # ============================================================================
 # Модели
 # ============================================================================
@@ -158,6 +77,7 @@ if get_answer is None:
 class ChatRequest(BaseModel):
     message: str
     session_id: str
+    stream: bool = True
 
 class ChatResponse(BaseModel):
     reply: str
@@ -239,40 +159,35 @@ def stats():
         "web_search_engine": web_search.get_engine_name() if web_search else "Нет",
         "ollama_model": OLLAMA_MODEL,
         "ollama_available": True,
-        "total_sessions": len(store.sessions)
+        "total_sessions": len(store.sessions),
+        "guardrails": guardrails.get_status(),
+        "streaming_supported": True
     }
 
 @app.post("/api/chat")
-def chat(req: ChatRequest):
-    logger.info(f"Запрос: {req.message[:50]}...")
+async def chat(req: ChatRequest):
+    """Обычный endpoint без стриминга (для тестирования и обратной совместимости)"""
+    logger.info(f"Обычный запрос: {req.message[:50]}...")
     
-    is_safe, error_msg = security.check(req.message, req.session_id)
+    # Проверка безопасности
+    is_safe, error_msg, details = guardrails.check(req.message, req.session_id)
+    
     if not is_safe:
-        logger.warning(f"Блокировка: {req.message[:50]}")
+        logger.warning(f"Блокировка: {details.get('category')}")
         return ChatResponse(
             reply=error_msg,
             session_id=req.session_id,
-            source="🛡️ Безопасность",
+            source="🛡️ Guardrails",
             processing_time=0.0
         )
-    
-    if not security.is_educational(req.message) and len(req.message) > 10:
-        return ChatResponse(
-            reply="📚 Я специализируюсь на вопросах по **термодинамике (ТТД)** и **тепломассообмену (ТМО)**.\n\nПримеры вопросов:\n• Объясни первый закон термодинамики\n• Что такое число Нуссельта?\n• Как рассчитать КПД цикла Карно?",
-            session_id=req.session_id,
-            source="🎓 Совет",
-            processing_time=0.0
-        )
-    
-    clean_message = security.clean_pii(req.message)
     
     store.get_or_create(req.session_id)
-    store.add_message(req.session_id, "user", clean_message)
+    store.add_message(req.session_id, "user", req.message)
     
     start = time.time()
     
     try:
-        result = get_answer(clean_message, session_id=req.session_id)
+        result = get_answer(req.message, session_id=req.session_id)
         
         if isinstance(result, tuple):
             answer, source = result
@@ -280,7 +195,6 @@ def chat(req: ChatRequest):
             answer = result
             source = "🤖 Бот"
         
-        answer = security.clean_pii(answer)
         elapsed = time.time() - start
         
         store.add_message(req.session_id, "assistant", answer, source)
@@ -295,309 +209,515 @@ def chat(req: ChatRequest):
         logger.exception("Ошибка")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/chat/stream")
+async def chat_stream(req: ChatRequest):
+    """Endpoint с поддержкой стриминга"""
+    logger.info(f"Stream запрос: {req.message[:50]}...")
+    
+    # Проверка безопасности
+    is_safe, error_msg, details = guardrails.check(req.message, req.session_id)
+    
+    if not is_safe:
+        async def error_stream():
+            yield json.dumps({"chunk": error_msg, "source": "🛡️ Guardrails", "done": True}) + "\n"
+        return StreamingResponse(error_stream(), media_type="application/x-ndjson")
+    
+    store.get_or_create(req.session_id)
+    store.add_message(req.session_id, "user", req.message)
+    
+    async def generate():
+        full_answer = ""
+        source = None
+        
+        try:
+            async for chunk_data in get_answer_stream(req.message, session_id=req.session_id):
+                if isinstance(chunk_data, str):
+                    try:
+                        data = json.loads(chunk_data)
+                        chunk = data.get("chunk", "")
+                        source = data.get("source", source)
+                        is_done = data.get("done", False)
+                    except:
+                        chunk = chunk_data
+                        is_done = False
+                else:
+                    chunk = chunk_data.get("chunk", "")
+                    source = chunk_data.get("source", source)
+                    is_done = chunk_data.get("done", False)
+                
+                full_answer += chunk
+                yield json.dumps({"chunk": chunk, "source": source, "done": is_done}) + "\n"
+                
+                if is_done:
+                    store.add_message(req.session_id, "assistant", full_answer, source)
+                    
+        except Exception as e:
+            logger.exception(f"Stream ошибка: {e}")
+            yield json.dumps({"chunk": f"\n\n❌ Ошибка: {str(e)}", "source": "⚠️ Ошибка", "done": True}) + "\n"
+    
+    return StreamingResponse(generate(), media_type="application/x-ndjson")
+
 @app.post("/api/clear")
 def clear(req: ClearRequest):
     store.clear(req.session_id)
     return {"status": "ok"}
 
-@app.get("/api/security/status")
-def security_status():
-    return {"blocked_count": security.blocked_count}
 
 # ============================================================================
-# HTML (исправленная версия с работающей кнопкой)
+# HTML
 # ============================================================================
 
-HTML_PAGE = """<!DOCTYPE html>
-<html>
+HTML_PAGE = r"""<!DOCTYPE html>
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ИИ преподаватель по ТТД и ТМО</title>
-    <script>
-        window.MathJax = {
-            tex: {
-                inlineMath: [['$', '$'], ['\\(', '\\)']],
-                displayMath: [['$$', '$$'], ['\\[', '\\]']],
-                processEscapes: true
-            }
-        };
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: system-ui, -apple-system, sans-serif; background: linear-gradient(135deg, #1a1a2e, #16213e); min-height: 100vh; padding: 20px; }
-        .app { max-width: 1000px; margin: 0 auto; background: white; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; height: 90vh; }
-        .header { background: linear-gradient(135deg, #1a1a2e, #0f3460); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-        .header h1 { font-size: 1.2rem; display: flex; align-items: center; gap: 8px; }
-        .badge { background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; }
-        .messages { flex: 1; overflow-y: auto; padding: 20px; background: #f0f2f5; display: flex; flex-direction: column; gap: 15px; }
-        .message { display: flex; gap: 10px; animation: fadeIn 0.3s ease; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 90vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #1a1a2e, #0f3460);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .header h1 { font-size: 1.2rem; }
+        .status { display: flex; gap: 8px; flex-wrap: wrap; }
+        .badge {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+        }
+        .clear-btn {
+            background: rgba(255,255,255,0.2);
+            margin-left: 8px;
+            cursor: pointer;
+        }
+        .clear-btn:hover { background: rgba(255,255,255,0.3); }
+        .chat {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f0f2f5;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .message {
+            display: flex;
+            gap: 10px;
+        }
         .message.user { justify-content: flex-end; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
         .message.user .avatar { background: #e94560; }
         .message.bot .avatar { background: #0f3460; }
-        .bubble { max-width: 75%; padding: 12px 16px; border-radius: 18px; background: white; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-        .message.user .bubble { background: #e94560; color: white; }
+        .bubble {
+            max-width: 75%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            background: white;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .message.user .bubble {
+            background: #e94560;
+            color: white;
+        }
         .bubble-text { line-height: 1.5; }
         .bubble-text p { margin-bottom: 8px; }
-        .bubble-text pre { background: #2d2d2d; color: #f8f8f2; padding: 10px; border-radius: 8px; overflow-x: auto; }
-        .bubble-text code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; }
-        .bubble-text mjx-container { margin: 10px 0; overflow-x: auto; }
-        .bubble-source { font-size: 0.7rem; margin-top: 6px; opacity: 0.7; }
-        .input-area { padding: 15px 20px; background: white; border-top: 1px solid #e1e8ed; display: flex; gap: 10px; }
-        textarea { flex: 1; padding: 10px 15px; border: 2px solid #e1e8ed; border-radius: 25px; resize: none; font-family: inherit; font-size: 0.95rem; outline: none; }
+        .bubble-source {
+            font-size: 0.7rem;
+            margin-top: 6px;
+            opacity: 0.7;
+        }
+        .cursor-blink {
+            display: inline-block;
+            width: 2px;
+            height: 1.2em;
+            background-color: #e94560;
+            margin-left: 2px;
+            animation: blink 1s step-end infinite;
+            vertical-align: middle;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        .input-area {
+            padding: 15px 20px;
+            background: white;
+            border-top: 1px solid #e1e8ed;
+            display: flex;
+            gap: 10px;
+        }
+        textarea {
+            flex: 1;
+            padding: 10px 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: 25px;
+            resize: none;
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+        }
         textarea:focus { border-color: #e94560; }
-        button { background: #e94560; color: white; border: none; padding: 10px 20px; border-radius: 25px; cursor: pointer; font-size: 0.95rem; transition: all 0.3s; }
-        button:hover { background: #c73e56; transform: translateY(-1px); }
-        button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-        .typing { padding: 10px 15px; color: #666; font-style: italic; display: flex; align-items: center; gap: 8px; background: white; border-radius: 18px; width: fit-content; }
-        .dot { width: 6px; height: 6px; background: #666; border-radius: 50%; animation: bounce 1.4s infinite; }
+        button {
+            background: #e94560;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+        button:hover { background: #c73e56; }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .typing {
+            padding: 10px 15px;
+            background: white;
+            border-radius: 18px;
+            width: fit-content;
+            display: flex;
+            gap: 8px;
+            color: #666;
+            font-style: italic;
+        }
+        .dot {
+            width: 6px;
+            height: 6px;
+            background: #666;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite;
+        }
         .dot:nth-child(2) { animation-delay: 0.2s; }
         .dot:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-8px); } }
-        .clear-btn { background: rgba(255,255,255,0.2); margin-left: 8px; }
-        .clear-btn:hover { background: rgba(255,255,255,0.3); transform: none; }
-        @media (max-width: 768px) { .bubble { max-width: 85%; } .header h1 { font-size: 1rem; } }
+        @keyframes bounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-8px); }
+        }
+        @media (max-width: 768px) {
+            .bubble { max-width: 85%; }
+            .header h1 { font-size: 1rem; }
+        }
     </style>
 </head>
 <body>
-<div class="app">
+<div class="container">
     <div class="header">
-        <h1><span>🔥</span> ИИ преподаватель по ТТД и ТМО</h1>
-        <div style="display: flex; gap: 8px;">
-            <div class="badge" id="kb">📚 RAG</div>
-            <div class="badge" id="web">🌐 Поиск</div>
-            <div class="badge" id="model">🤖 Модель</div>
-            <button class="clear-btn" onclick="clearChat()">🗑️</button>
+        <h1>🔥 ИИ преподаватель по ТТД и ТМО</h1>
+        <div class="status">
+            <div class="badge" id="badge-kb">📚 RAG</div>
+            <div class="badge" id="badge-web">🌐 Поиск</div>
+            <div class="badge" id="badge-guard">🛡️ Guardrails</div>
+            <div class="badge clear-btn" id="btn-clear">🗑️ Очистить</div>
         </div>
     </div>
-    <div class="messages" id="messages"></div>
+    <div class="chat" id="chat"></div>
     <div class="input-area">
-        <textarea id="input" placeholder="Введите вопрос по термодинамике (ТТД) или тепломассообмену (ТМО)..." rows="1"></textarea>
-        <button id="sendBtn" onclick="sendMessage()">📤 Отправить</button>
+        <textarea id="input" placeholder="Введите вопрос по термодинамике..." rows="1"></textarea>
+        <button id="btn-send">📤 Отправить</button>
     </div>
 </div>
 
 <script>
-    // Получение или создание sessionId
-    let sessionId = localStorage.getItem('session_id');
+(function() {
+    let sessionId = localStorage.getItem("session_id");
     if (!sessionId) {
         sessionId = crypto.randomUUID();
-        localStorage.setItem('session_id', sessionId);
+        localStorage.setItem("session_id", sessionId);
     }
     
-    let isWaiting = false;
+    let isLoading = false;
+    let fullAnswer = "";
     
-    // Функция для рендеринга формул
-    async function renderMath(element) {
-        if (window.MathJax) {
-            try {
-                await MathJax.typesetPromise([element]);
-            } catch(e) {
-                console.log('MathJax error:', e);
-            }
-        }
+    const chat = document.getElementById("chat");
+    const input = document.getElementById("input");
+    const sendBtn = document.getElementById("btn-send");
+    const clearBtn = document.getElementById("btn-clear");
+    const badgeKb = document.getElementById("badge-kb");
+    const badgeWeb = document.getElementById("badge-web");
+    const badgeGuard = document.getElementById("badge-guard");
+    
+    function formatText(text) {
+        if (!text) return "";
+        let result = text;
+        result = result.replace(/&/g, "&amp;");
+        result = result.replace(/</g, "&lt;");
+        result = result.replace(/>/g, "&gt;");
+        result = result.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+        result = result.replace(/\n/g, "<br>");
+        return result;
     }
     
-    // Форматирование контента
-    function formatContent(text) {
-        if (!text) return '';
-        let formatted = text
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/\\*\\*(.*?)\\*\\*/g, '<strong>$1</strong>')
-            .replace(/\\*(.*?)\\*/g, '<em>$1</em>')
-            .replace(/\\n/g, '<br>')
-            .replace(/`([^`]+)`/g, '<code>$1</code>');
-        return formatted;
-    }
-    
-    // Добавление сообщения в чат
-    async function addMessage(role, content, source = null) {
-        const container = document.getElementById('messages');
-        const div = document.createElement('div');
-        div.className = 'message ' + role;
+    function addUserMessage(content) {
+        const div = document.createElement("div");
+        div.className = "message user";
         
-        const avatar = document.createElement('div');
-        avatar.className = 'avatar';
-        avatar.textContent = role === 'user' ? '👤' : '🤖';
+        const avatar = document.createElement("div");
+        avatar.className = "avatar";
+        avatar.textContent = "👤";
         
-        const bubble = document.createElement('div');
-        bubble.className = 'bubble';
+        const bubble = document.createElement("div");
+        bubble.className = "bubble";
         
-        const textDiv = document.createElement('div');
-        textDiv.className = 'bubble-text';
-        textDiv.innerHTML = formatContent(content);
+        const textDiv = document.createElement("div");
+        textDiv.className = "bubble-text";
+        textDiv.innerHTML = formatText(content);
         bubble.appendChild(textDiv);
-        
-        if (source && role === 'bot') {
-            const sourceDiv = document.createElement('div');
-            sourceDiv.className = 'bubble-source';
-            sourceDiv.textContent = source;
-            bubble.appendChild(sourceDiv);
-        }
         
         div.appendChild(avatar);
         div.appendChild(bubble);
-        container.appendChild(div);
+        chat.appendChild(div);
+        chat.scrollTop = chat.scrollHeight;
+    }
+    
+    function createStreamingMessage() {
+        const div = document.createElement("div");
+        div.className = "message bot";
+        div.id = "streaming-message";
         
-        await renderMath(textDiv);
-        container.scrollTop = container.scrollHeight;
+        const avatar = document.createElement("div");
+        avatar.className = "avatar";
+        avatar.textContent = "🤖";
+        
+        const bubble = document.createElement("div");
+        bubble.className = "bubble";
+        
+        const textDiv = document.createElement("div");
+        textDiv.className = "bubble-text";
+        
+        const contentSpan = document.createElement("span");
+        contentSpan.id = "streaming-content";
+        const cursorSpan = document.createElement("span");
+        cursorSpan.className = "cursor-blink";
+        
+        textDiv.appendChild(contentSpan);
+        textDiv.appendChild(cursorSpan);
+        bubble.appendChild(textDiv);
+        
+        const sourceDiv = document.createElement("div");
+        sourceDiv.className = "bubble-source";
+        sourceDiv.id = "streaming-source";
+        bubble.appendChild(sourceDiv);
+        
+        div.appendChild(avatar);
+        div.appendChild(bubble);
+        chat.appendChild(div);
+        chat.scrollTop = chat.scrollHeight;
+        
+        return { contentSpan, sourceDiv, cursorSpan };
     }
     
-    // Показать индикатор печати
-    function showTyping() {
-        const container = document.getElementById('messages');
-        const div = document.createElement('div');
-        div.id = 'typing';
-        div.className = 'typing';
+    function updateStreaming(content, source, isDone) {
+        const contentSpan = document.getElementById("streaming-content");
+        const sourceDiv = document.getElementById("streaming-source");
+        const cursorSpan = document.querySelector(".cursor-blink");
+        
+        if (contentSpan) {
+            contentSpan.innerHTML = formatText(content);
+        }
+        if (sourceDiv && source) {
+            sourceDiv.textContent = source;
+        }
+        if (isDone && cursorSpan) {
+            cursorSpan.style.display = "none";
+        }
+        
+        if (window.MathJax && contentSpan) {
+            MathJax.typesetPromise([contentSpan]).catch(console.error);
+        }
+        
+        chat.scrollTop = chat.scrollHeight;
+    }
+    
+    function showLoading() {
+        const div = document.createElement("div");
+        div.id = "loading";
+        div.className = "typing";
         div.innerHTML = '<div style="display:flex;gap:4px"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><span>🤖 Преподаватель печатает...</span>';
-        container.appendChild(div);
-        container.scrollTop = container.scrollHeight;
+        chat.appendChild(div);
+        chat.scrollTop = chat.scrollHeight;
     }
     
-    // Скрыть индикатор печати
-    function hideTyping() {
-        const el = document.getElementById('typing');
+    function hideLoading() {
+        const el = document.getElementById("loading");
         if (el) el.remove();
     }
     
-    // Отправка сообщения
-    window.sendMessage = async function() {
-        const input = document.getElementById('input');
+    async function sendMessage() {
         const message = input.value.trim();
+        if (!message || isLoading) return;
         
-        if (!message) {
-            console.log('Пустое сообщение');
-            return;
-        }
+        input.value = "";
+        input.style.height = "auto";
         
-        if (isWaiting) {
-            console.log('Уже отправляется');
-            return;
-        }
+        addUserMessage(message);
         
-        // Очищаем поле
-        input.value = '';
-        input.style.height = 'auto';
-        
-        // Добавляем сообщение пользователя
-        await addMessage('user', message);
-        
-        isWaiting = true;
-        const sendBtn = document.getElementById('sendBtn');
+        isLoading = true;
         sendBtn.disabled = true;
-        showTyping();
+        showLoading();
+        
+        fullAnswer = "";
+        createStreamingMessage();
         
         try {
-            const response = await fetch('/api/chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    message: message,
-                    session_id: sessionId
-                })
+            const response = await fetch("/api/chat/stream", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: message, session_id: sessionId, stream: true })
             });
             
-            if (!response.ok) {
-                throw new Error('Ошибка сервера: ' + response.status);
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = "";
+            
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split("\n");
+                buffer = lines.pop() || "";
+                
+                for (const line of lines) {
+                    if (line.trim()) {
+                        try {
+                            const data = JSON.parse(line);
+                            if (data.chunk !== undefined) {
+                                fullAnswer += data.chunk;
+                                updateStreaming(fullAnswer, data.source, data.done);
+                            }
+                        } catch (e) {
+                            console.error("Parse error:", e);
+                        }
+                    }
+                }
             }
-            
-            const data = await response.json();
-            hideTyping();
-            await addMessage('bot', data.reply, data.source);
-            
         } catch (error) {
-            console.error('Ошибка:', error);
-            hideTyping();
-            await addMessage('bot', '❌ Ошибка: ' + error.message);
+            console.error("Stream error:", error);
+            updateStreaming(fullAnswer + "\n\n❌ Ошибка: " + error.message, "⚠️ Ошибка", true);
         } finally {
-            isWaiting = false;
+            hideLoading();
+            isLoading = false;
             sendBtn.disabled = false;
             input.focus();
         }
-    };
+    }
     
-    // Очистка чата
-    window.clearChat = async function() {
-        if (!confirm('Очистить историю диалога?')) return;
-        
+    async function clearChat() {
+        if (!confirm("Очистить историю диалога?")) return;
         try {
-            await fetch('/api/clear', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+            await fetch("/api/clear", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ session_id: sessionId })
             });
-            
-            document.getElementById('messages').innerHTML = '';
-            await addMessage('bot', '🧹 История диалога очищена. Задайте новый вопрос!');
-            
-        } catch (error) {
-            console.error('Ошибка очистки:', error);
-            await addMessage('bot', '❌ Не удалось очистить историю');
-        }
-    };
-    
-    // Загрузка статуса
-    async function loadStats() {
-        try {
-            const response = await fetch('/api/stats');
-            if (!response.ok) return;
-            const stats = await response.json();
-            
-            const kbEl = document.getElementById('kb');
-            const webEl = document.getElementById('web');
-            const modelEl = document.getElementById('model');
-            
-            if (kbEl) kbEl.innerHTML = stats.knowledge_base_loaded ? '📚 RAG ✅' : '📚 RAG ❌';
-            if (webEl) webEl.innerHTML = stats.web_search_available ? '🌐 ' + (stats.web_search_engine || 'Поиск') + ' ✅' : '🌐 Поиск ❌';
-            if (modelEl) modelEl.innerHTML = stats.ollama_available ? '🤖 ' + stats.ollama_model + ' ✅' : '🤖 Модель ❌';
-        } catch(e) {
-            console.log('Stats error:', e);
+            chat.innerHTML = "";
+            addWelcomeMessage();
+        } catch (err) {
+            console.error("Clear error:", err);
         }
     }
     
-    // Обработчики событий
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('Страница загружена');
-        
-        const textarea = document.getElementById('input');
-        const sendBtn = document.getElementById('sendBtn');
-        
-        // Отправка по Enter
-        textarea.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
+    async function loadStats() {
+        try {
+            const res = await fetch("/api/stats");
+            if (!res.ok) return;
+            const stats = await res.json();
+            
+            if (badgeKb) {
+                badgeKb.innerHTML = stats.knowledge_base_loaded ? "📚 RAG ✅" : "📚 RAG ❌";
             }
-        });
+            if (badgeWeb) {
+                const engine = stats.web_search_engine || "Поиск";
+                badgeWeb.innerHTML = stats.web_search_available ? "🌐 " + engine + " ✅" : "🌐 Поиск ❌";
+            }
+            if (badgeGuard) {
+                badgeGuard.innerHTML = stats.guardrails?.active ? "🛡️ Guardrails ✅" : "🛡️ Guardrails ⚠️";
+            }
+        } catch(e) {
+            console.log("Stats error:", e);
+        }
+    }
+    
+    function addWelcomeMessage() {
+        const div = document.createElement("div");
+        div.className = "message bot";
         
-        // Авто-изменение высоты
-        textarea.addEventListener('input', function() {
-            this.style.height = 'auto';
-            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-        });
+        const avatar = document.createElement("div");
+        avatar.className = "avatar";
+        avatar.textContent = "🤖";
         
-        // Загрузка статуса
-        loadStats();
-        setInterval(loadStats, 30000);
+        const bubble = document.createElement("div");
+        bubble.className = "bubble";
         
-        // Приветственное сообщение
-        setTimeout(function() {
-            addMessage('bot', '👋 Здравствуйте! Я ИИ-преподаватель по **термодинамике (ТТД)** и **тепломассообмену (ТМО)**.\n\nЗадайте мне вопрос по:\n• 📚 Лабораторным работам\n• 📊 Обработке данных\n• 📖 Теоретическому материалу\n• 🔬 Подготовке к экзаменам\n\n**Пример формулы:**\n$$\\\\lambda = \\\\frac{Q \\\\cdot \\\\ln(r_2/r_1)}{2\\\\pi L \\\\cdot (t_1 - t_2)}$$');
-        }, 500);
+        const textDiv = document.createElement("div");
+        textDiv.className = "bubble-text";
+        textDiv.innerHTML = "👋 Здравствуйте! Я ИИ-преподаватель по <strong>технической термодинамике (ТТД)</strong> и <strong>тепломассообмену (ТМО)</strong>.<br><br>Задайте мне вопрос по:<br>• 📚 Лабораторным работам<br>• 📊 Обработке данных<br>• 📖 Теоретическому материалу<br>• 🔬 Подготовке к экзаменам";
         
-        textarea.focus();
-    });
+        bubble.appendChild(textDiv);
+        div.appendChild(avatar);
+        div.appendChild(bubble);
+        chat.appendChild(div);
+    }
+    
+    sendBtn.onclick = sendMessage;
+    clearBtn.onclick = clearChat;
+    
+    input.onkeydown = function(e) {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    };
+    
+    input.oninput = function() {
+        this.style.height = "auto";
+        this.style.height = Math.min(this.scrollHeight, 120) + "px";
+    };
+    
+    loadStats();
+    setInterval(loadStats, 30000);
+    addWelcomeMessage();
+    input.focus();
+    
+    console.log("Chat initialized, sessionId:", sessionId);
+})();
 </script>
 </body>
-</html>"""
+</html>
+"""
 
 @app.get("/")
 async def root():
