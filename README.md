@@ -119,7 +119,8 @@
     - 📱 Работает на любом устройстве
 ---
 ## 🖼️ Внешний вид интерфейса
-![Uploading start.jpg…]()
+<img width="810" height="865" alt="image" src="https://github.com/user-attachments/assets/19a44f6e-8e95-48c6-a731-07a737fdfe96" />
+
 ## 📁 Структура проекта
 ```plaintext
 thermodynamics-rag/
