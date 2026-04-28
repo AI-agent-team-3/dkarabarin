@@ -119,7 +119,8 @@
     - 📱 Работает на любом устройстве
 ---
 ## 🖼️ Внешний вид интерфейса
-<img width="810" height="865" alt="image" src="https://github.com/user-attachments/assets/19a44f6e-8e95-48c6-a731-07a737fdfe96" />
+<img width="1135" height="823" alt="image" src="https://github.com/user-attachments/assets/25e09e16-29db-4197-835c-e00b6c6dbd21" />
+
 
 ## 📁 Структура проекта
 ```plaintext
